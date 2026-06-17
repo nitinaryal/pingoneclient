@@ -1,0 +1,155 @@
+:root {
+    color-scheme: light;
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #dbe3ef;
+    --primary: #0f62fe;
+    --primary-hover: #0b4ec9;
+    --secondary: #4b5563;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+h1 {
+    margin: 0 0 0.25rem;
+    font-size: 1.75rem;
+}
+
+h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+}
+
+.subtitle {
+    margin: 0;
+    color: var(--muted);
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.55rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #f8fafc;
+}
+
+.btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    border-color: var(--secondary);
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #374151;
+}
+
+.btn-link {
+    border: none;
+    background: transparent;
+    color: var(--primary);
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+.data-table th {
+    width: 220px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.json-block {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 8px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.85rem;
+}
+
+code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.9em;
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Access Token - PingOne OIDC Test Client</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <header class="page-header">
+        <div>
+            <h1>Access Token</h1>
+            <p class="subtitle">Token value is partially masked for security.</p>
+        </div>
+        <a class="btn btn-link" th:href="@{/dashboard}">Back to Dashboard</a>
+    </header>
+
+    <div class="card">
+        <table class="data-table">
+            <tbody>
+            <tr>
+                <th>Masked Access Token</th>
+                <td><code th:text="${maskedAccessToken}">token</code></td>
+            </tr>
+            <tr>
+                <th>Token Type</th>
+                <td th:text="${tokenType}">Bearer</td>
+            </tr>
+            <tr>
+                <th>Expires At</th>
+                <td th:text="${expiresAt}">time</td>
+            </tr>
+            <tr>
+                <th>Scopes</th>
+                <td th:text="${scopes}">scopes</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

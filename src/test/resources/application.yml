@@ -1,0 +1,26 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          pingone:
+            client-id: test-client-id
+            client-secret: test-client-secret
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:8080/login/oauth2/code/pingone
+            scope:
+              - openid
+              - profile
+              - email
+            provider: pingone
+        provider:
+          pingone:
+            authorization-uri: https://auth.example.com/as/authorize
+            token-uri: https://auth.example.com/as/token
+            user-info-uri: https://auth.example.com/as/userinfo
+            jwk-set-uri: https://auth.example.com/as/jwks
+            user-name-attribute: sub
+
+pingone:
+  post-logout-redirect-uri: http://localhost:8080/

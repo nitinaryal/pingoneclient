@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>PingOne OIDC Test Client</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <h1>PingOne OIDC Test Client</h1>
+    <p class="subtitle">Minimal Spring Boot client for validating PingOne authentication flows.</p>
+
+    <div class="card" sec:authorize="!isAuthenticated()">
+        <p>You are not signed in.</p>
+        <a class="btn btn-primary" th:href="@{/oauth2/authorization/pingone}">Login with PingOne</a>
+    </div>
+
+    <div class="card" sec:authorize="isAuthenticated()">
+        <p>Signed in as <strong sec:authentication="name">user</strong>.</p>
+        <a class="btn btn-primary" th:href="@{/dashboard}">Go to Dashboard</a>
+    </div>
+</main>
+</body>
+</html>

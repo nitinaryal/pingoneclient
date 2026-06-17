@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>ID Token Claims - PingOne OIDC Test Client</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <header class="page-header">
+        <div>
+            <h1>ID Token Claims</h1>
+            <p class="subtitle">Principal: <strong th:text="${principalName}">user</strong></p>
+        </div>
+        <a class="btn btn-link" th:href="@{/dashboard}">Back to Dashboard</a>
+    </header>
+
+    <div class="card">
+        <table class="data-table">
+            <thead>
+            <tr>
+                <th>Claim</th>
+                <th>Value</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="entry : ${claims}">
+                <td th:text="${entry.key}">claim</td>
+                <td th:text="${entry.value}">value</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

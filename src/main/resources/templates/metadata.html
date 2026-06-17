@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>OIDC Metadata - PingOne OIDC Test Client</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <header class="page-header">
+        <div>
+            <h1>OIDC Discovery Metadata</h1>
+            <p class="subtitle">OpenID Provider Configuration document</p>
+        </div>
+        <a class="btn btn-link" th:href="@{/dashboard}">Back to Dashboard</a>
+    </header>
+
+    <div class="card">
+        <pre class="json-block" th:text="${metadataJson}">{}</pre>
+    </div>
+</main>
+</body>
+</html>

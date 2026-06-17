@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: pingone-oidc-test-client
+  security:
+    oauth2:
+      client:
+        registration:
+          pingone:
+            client-id: ${PINGONE_CLIENT_ID:change-me}
+            client-secret: ${PINGONE_CLIENT_SECRET:change-me}
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: ${PINGONE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/pingone}
+            scope:
+              - openid
+              - profile
+              - email
+            provider: pingone
+        provider:
+          pingone:
+            # Option A (recommended): issuer-uri auto-discovers authorization, token, userinfo, and jwks endpoints.
+            issuer-uri: ${PINGONE_ISSUER_URI:https://auth.pingone.com/{environment-id}/as}
+            # Option B: comment issuer-uri above and uncomment explicit endpoints instead.
+            # authorization-uri: ${PINGONE_AUTHORIZATION_URI:https://auth.pingone.com/{environment-id}/as/authorize}
+            # token-uri: ${PINGONE_TOKEN_URI:https://auth.pingone.com/{environment-id}/as/token}
+            # user-info-uri: ${PINGONE_USERINFO_URI:https://auth.pingone.com/{environment-id}/as/userinfo}
+            # jwk-set-uri: ${PINGONE_JWKS_URI:https://auth.pingone.com/{environment-id}/as/jwks}
+            user-name-attribute: sub
+
+pingone:
+  # Used by /jwks when you want to override the provider jwk-set-uri.
+  jwks-uri: ${PINGONE_JWKS_URI:}
+  post-logout-redirect-uri: ${PINGONE_POST_LOGOUT_REDIRECT_URI:http://localhost:8080/}
