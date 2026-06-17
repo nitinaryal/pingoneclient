@@ -1,6 +1,6 @@
 package com.pingone.oidc.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.pingone.oidc.config.properties.PingOneClientProperties;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Service;
@@ -10,18 +10,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Service
 public class PingOneMetadataService {
 
-    private static final String REGISTRATION_ID = "pingone";
-
     private final WebClient webClient;
+    private final PingOneClientProperties properties;
     private final ClientRegistrationRepository clientRegistrationRepository;
-
-    @Value("${pingone.jwks-uri:}")
-    private String configuredJwksUri;
 
     public PingOneMetadataService(
             WebClient webClient,
+            PingOneClientProperties properties,
             ClientRegistrationRepository clientRegistrationRepository) {
         this.webClient = webClient;
+        this.properties = properties;
         this.clientRegistrationRepository = clientRegistrationRepository;
     }
 
@@ -29,11 +27,14 @@ public class PingOneMetadataService {
         String issuerUri = pingOneRegistration().getProviderDetails().getIssuerUri();
         if (!StringUtils.hasText(issuerUri)) {
             throw new IllegalStateException(
-                    "issuer-uri is not configured. Set spring.security.oauth2.client.provider.pingone.issuer-uri");
+                    "issuer-uri is not configured. Set spring.security.oauth2.client.provider."
+                            + properties.getProviderId()
+                            + ".issuer-uri");
         }
+        String discoveryPath = properties.getMetadata().getDiscoveryDocumentPath();
         String discoveryUri = issuerUri.endsWith("/")
-                ? issuerUri + ".well-known/openid-configuration"
-                : issuerUri + "/.well-known/openid-configuration";
+                ? issuerUri + discoveryPath.substring(1)
+                : issuerUri + discoveryPath;
 
         return webClient.get()
                 .uri(discoveryUri)
@@ -52,21 +53,23 @@ public class PingOneMetadataService {
     }
 
     public String resolveJwksUri() {
+        String configuredJwksUri = properties.getMetadata().getJwksUriOverride();
         if (StringUtils.hasText(configuredJwksUri)) {
             return configuredJwksUri;
         }
         String jwkSetUri = pingOneRegistration().getProviderDetails().getJwkSetUri();
         if (!StringUtils.hasText(jwkSetUri)) {
             throw new IllegalStateException(
-                    "JWKS URI is not configured. Set issuer-uri, jwk-set-uri, or pingone.jwks-uri");
+                    "JWKS URI is not configured. Set issuer-uri, jwk-set-uri, or pingone.metadata.jwks-uri-override");
         }
         return jwkSetUri;
     }
 
     private ClientRegistration pingOneRegistration() {
-        ClientRegistration registration = clientRegistrationRepository.findByRegistrationId(REGISTRATION_ID);
+        String registrationId = properties.getRegistrationId();
+        ClientRegistration registration = clientRegistrationRepository.findByRegistrationId(registrationId);
         if (registration == null) {
-            throw new IllegalStateException("OAuth2 client registration 'pingone' was not found");
+            throw new IllegalStateException("OAuth2 client registration '" + registrationId + "' was not found");
         }
         return registration;
     }

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${testFlow != null ? testFlow.name() : 'Test Guide'}">Test Guide</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <header class="page-header">
+        <div>
+            <h1 th:text="${testFlow != null ? testFlow.name() : 'Test not found'}">Test</h1>
+            <p class="subtitle" th:if="${testFlow != null}" th:text="${testFlow.description()}">Description</p>
+        </div>
+        <a class="btn btn-link" th:href="@{/tool}">Back to Client Tool</a>
+    </header>
+
+    <div class="card" th:if="${testFlow == null}">
+        <p>Test flow not found for the current application type.</p>
+    </div>
+
+    <div th:if="${testFlow != null}">
+        <div class="card">
+            <h2>Investigation Steps</h2>
+            <ol class="step-list">
+                <li th:each="step : ${testFlow.steps()}">
+                    <strong th:text="${step.title()}">Step</strong>
+                    <p th:text="${step.detail()}">Detail</p>
+                    <p class="expected"><span>Expected:</span> <span th:text="${step.expectedResult()}">result</span></p>
+                </li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h2>Execute Test</h2>
+            <p class="help-text">
+                Method: <code th:text="${testFlow.httpMethod()}">GET</code>
+                · Path: <code th:text="${testFlow.actionPath()}">/path</code>
+                · Requires auth: <code th:text="${testFlow.requiresAuthentication()}">false</code>
+            </p>
+            <div class="actions" th:if="${testFlow.runnableInTemplate()}">
+                <a th:if="${testFlow.httpMethod() == 'GET' and testFlow.id() == 'login'}"
+                   class="btn btn-primary" th:href="@{${runtimeLoginPath}}">Run Login Test</a>
+                <form th:if="${testFlow.httpMethod() == 'POST' and testFlow.id() == 'logout'}"
+                      th:action="@{/logout}" method="post" class="inline-form">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-secondary">Run Logout Test</button>
+                </form>
+                <a th:if="${testFlow.httpMethod() == 'GET' and testFlow.id() != 'login' and testFlow.id() != 'connectivity'}"
+                   class="btn btn-primary" th:href="@{${testFlow.actionPath()}}">Run Test</a>
+                <button th:if="${testFlow.id() == 'connectivity'}" type="button" class="btn btn-primary"
+                        onclick="location.href='/tool#diagnostics'">Run Connectivity Check</button>
+            </div>
+            <p th:unless="${testFlow.runnableInTemplate()}" class="notice">
+                This application type is not yet runnable in the template. Use generated artifacts in your application.
+            </p>
+        </div>
+    </div>
+</main>
+</body>
+</html>

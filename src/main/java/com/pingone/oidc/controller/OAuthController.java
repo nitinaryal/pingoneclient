@@ -1,12 +1,13 @@
 package com.pingone.oidc.controller;
 
+import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.service.PingOneMetadataService;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,21 +16,28 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class OAuthController {
 
-    private static final String[] CLAIM_KEYS = {"sub", "email", "name", "iss", "aud", "exp"};
-
+    private final PingOneClientProperties properties;
     private final PingOneMetadataService metadataService;
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
-    public OAuthController(PingOneMetadataService metadataService) {
+    public OAuthController(
+            PingOneClientProperties properties,
+            PingOneMetadataService metadataService,
+            OAuth2AuthorizedClientService authorizedClientService) {
+        this.properties = properties;
         this.metadataService = metadataService;
+        this.authorizedClientService = authorizedClientService;
     }
 
     @GetMapping("/me")
     public String me(@AuthenticationPrincipal OidcUser oidcUser, Model model) {
         Map<String, Object> claims = new LinkedHashMap<>();
-        for (String key : CLAIM_KEYS) {
+        for (String key : properties.getOidc().getIdTokenClaimKeys()) {
             Object value = oidcUser.getIdToken().getClaim(key);
             if ("exp".equals(key) && value instanceof Number number) {
                 claims.put(key, number.longValue() + " (" + Instant.ofEpochSecond(number.longValue()) + ")");
+            } else if ("exp".equals(key) && value instanceof Instant instant) {
+                claims.put(key, instant.getEpochSecond() + " (" + instant + ")");
             } else {
                 claims.put(key, value);
             }
@@ -40,9 +48,13 @@ public class OAuthController {
     }
 
     @GetMapping("/token")
-    public String token(
-            @RegisteredOAuth2AuthorizedClient("pingone") OAuth2AuthorizedClient authorizedClient,
-            Model model) {
+    public String token(@AuthenticationPrincipal OidcUser oidcUser, Model model) {
+        OAuth2AuthorizedClient authorizedClient = authorizedClientService.loadAuthorizedClient(
+                properties.getRegistrationId(), oidcUser.getName());
+        if (authorizedClient == null) {
+            throw new IllegalStateException(
+                    "No authorized client found for registration '" + properties.getRegistrationId() + "'");
+        }
         String accessToken = authorizedClient.getAccessToken().getTokenValue();
         model.addAttribute("maskedAccessToken", maskToken(accessToken));
         model.addAttribute("tokenType", authorizedClient.getAccessToken().getTokenType().getValue());

@@ -1,36 +1,74 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8081}
 
 spring:
+  config:
+    import: optional:classpath:application-mock-overlay.yml
   application:
-    name: pingone-oidc-test-client
+    name: ${SPRING_APPLICATION_NAME:pingone-oidc-test-client}
   security:
     oauth2:
       client:
         registration:
+          # Key must match pingone.registration-id
           pingone:
             client-id: ${PINGONE_CLIENT_ID:change-me}
             client-secret: ${PINGONE_CLIENT_SECRET:change-me}
-            client-authentication-method: client_secret_basic
-            authorization-grant-type: authorization_code
+            client-authentication-method: ${PINGONE_CLIENT_AUTH_METHOD:client_secret_basic}
+            authorization-grant-type: ${PINGONE_GRANT_TYPE:authorization_code}
             redirect-uri: ${PINGONE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/pingone}
             scope:
               - openid
               - profile
               - email
-            provider: pingone
+            provider: ${PINGONE_PROVIDER_ID:pingone}
         provider:
+          # Key must match pingone.provider-id
           pingone:
-            # Option A (recommended): issuer-uri auto-discovers authorization, token, userinfo, and jwks endpoints.
             issuer-uri: ${PINGONE_ISSUER_URI:https://auth.pingone.com/{environment-id}/as}
-            # Option B: comment issuer-uri above and uncomment explicit endpoints instead.
-            # authorization-uri: ${PINGONE_AUTHORIZATION_URI:https://auth.pingone.com/{environment-id}/as/authorize}
-            # token-uri: ${PINGONE_TOKEN_URI:https://auth.pingone.com/{environment-id}/as/token}
-            # user-info-uri: ${PINGONE_USERINFO_URI:https://auth.pingone.com/{environment-id}/as/userinfo}
-            # jwk-set-uri: ${PINGONE_JWKS_URI:https://auth.pingone.com/{environment-id}/as/jwks}
-            user-name-attribute: sub
+            # Option B: comment issuer-uri and set explicit endpoints instead.
+            # authorization-uri: ${PINGONE_AUTHORIZATION_URI:}
+            # token-uri: ${PINGONE_TOKEN_URI:}
+            # user-info-uri: ${PINGONE_USERINFO_URI:}
+            # jwk-set-uri: ${PINGONE_JWKS_URI:}
+            user-name-attribute: ${PINGONE_USER_NAME_ATTRIBUTE:sub}
 
 pingone:
-  # Used by /jwks when you want to override the provider jwk-set-uri.
-  jwks-uri: ${PINGONE_JWKS_URI:}
-  post-logout-redirect-uri: ${PINGONE_POST_LOGOUT_REDIRECT_URI:http://localhost:8080/}
+  # Supported now: oidc-web-app
+  # Future: oidc-spa, oidc-native, worker, device, saml
+  application-type: ${PINGONE_APPLICATION_TYPE:oidc-web-app}
+  registration-id: ${PINGONE_REGISTRATION_ID:pingone}
+  provider-id: ${PINGONE_PROVIDER_ID:pingone}
+  ui:
+    home-path: ${PINGONE_UI_HOME_PATH:/}
+    post-login-path: ${PINGONE_UI_POST_LOGIN_PATH:/dashboard}
+  security:
+    public-paths:
+      - /
+      - /tool
+      - /tool/**
+      - /error
+      - /css/**
+      - /js/**
+      - /webjars/**
+    post-logout-redirect-uri: ${PINGONE_POST_LOGOUT_REDIRECT_URI:http://localhost:8080/}
+  metadata:
+    jwks-uri-override: ${PINGONE_JWKS_URI_OVERRIDE:}
+    discovery-document-path: ${PINGONE_DISCOVERY_PATH:/.well-known/openid-configuration}
+  mock:
+    base-path: /mock/pingone/as
+    client-id: mock-client-id
+    client-secret: mock-client-secret
+    default-sub: mock-user-001
+    default-email: mock.user@example.com
+    default-name: Mock PingOne User
+  oidc:
+    id-token-claim-keys:
+      - sub
+      - email
+      - name
+      - iss
+      - aud
+      - exp
+
+# Mock mode: enable with -Dmock=true (see application-mock-overlay.yml). Do not define mock: here — it causes a circular placeholder.

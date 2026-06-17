@@ -1,0 +1,18 @@
+spring:
+  config:
+    activate:
+      on-property:
+        name: mock
+        value: "true"
+
+pingone:
+  security:
+    public-paths:
+      - /
+      - /tool
+      - /tool/**
+      - /mock/**
+      - /error
+      - /css/**
+      - /js/**
+      - /webjars/**

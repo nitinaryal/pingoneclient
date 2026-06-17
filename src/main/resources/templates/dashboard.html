@@ -9,18 +9,29 @@
 </head>
 <body>
 <main class="container">
+    <div class="mock-banner" th:if="${pingoneMockMode}">
+        <strong>Mock mode</strong> — authenticated against the local mock PingOne provider.
+    </div>
+
     <header class="page-header">
         <div>
             <h1>Dashboard</h1>
-            <p class="subtitle">Authenticated as <strong sec:authentication="name">user</strong></p>
+            <p class="subtitle">Authenticated as <strong sec:authentication="name">user</strong>
+                (<span th:text="${pingoneApplicationType}">oidc-web-app</span>)</p>
         </div>
         <a class="btn btn-link" th:href="@{/}">Home</a>
     </header>
 
     <div class="card">
+        <h2>Client Integration Tool</h2>
+        <p class="help-text">Configure PingOne application types, run pre-production tests, and copy adoption snippets.</p>
+        <a class="btn btn-primary" th:href="@{/tool}">Open Client Tool</a>
+    </div>
+
+    <div class="card">
         <h2>Authentication Actions</h2>
         <div class="actions">
-            <a class="btn btn-primary" th:href="@{/oauth2/authorization/pingone}">Login</a>
+            <a class="btn btn-primary" th:href="@{${pingoneLoginPath}}">Login</a>
             <form th:action="@{/logout}" method="post" class="inline-form">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button type="submit" class="btn btn-secondary">Logout (PingOne end session)</button>

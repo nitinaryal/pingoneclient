@@ -30,6 +30,10 @@ body {
     padding: 2rem 1.25rem 3rem;
 }
 
+.container-wide {
+    max-width: 1100px;
+}
+
 .page-header {
     display: flex;
     justify-content: space-between;
@@ -152,4 +156,348 @@ h2 {
 code {
     font-family: Consolas, "Courier New", monospace;
     font-size: 0.9em;
+}
+
+.help-text {
+    color: var(--muted);
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.runtime-badge {
+    margin-top: 0.5rem;
+}
+
+.type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.type-card {
+    text-align: left;
+    padding: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fafbfc;
+    cursor: pointer;
+}
+
+.type-card.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+    background: #eef4ff;
+}
+
+.type-name {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.type-status {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+}
+
+.type-status.implemented {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.type-status.planned {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.type-summary {
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.config-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.config-form fieldset {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 0;
+    padding: 1rem;
+}
+
+.config-form legend {
+    font-weight: 600;
+    padding: 0 0.35rem;
+}
+
+.config-form .field-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.discovery-import-panel {
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.discovery-import-panel h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.discovery-json-input {
+    width: 100%;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85rem;
+    padding: 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    margin-bottom: 0.75rem;
+}
+
+.discovery-import-actions {
+    flex-wrap: wrap;
+}
+
+.discovery-import-status {
+    margin: 0.75rem 0 0;
+    padding: 0.65rem;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    max-height: 8rem;
+    overflow: auto;
+}
+
+.form-field input.discovery-filled {
+    border-color: #0f62fe;
+    background: #f0f7ff;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.tooltip-icon {
+    display: inline-flex;
+    width: 1.1rem;
+    height: 1.1rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #374151;
+    font-size: 0.75rem;
+    cursor: help;
+}
+
+.field-hint {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.form-field input {
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.snippet-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.snippet-tab {
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.snippet-tab.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.artifacts-status {
+    margin: 0 0 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+.artifacts-status.success {
+    background: #ecfdf5;
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
+.artifacts-status.error {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+}
+
+.artifacts-status.pending {
+    background: #fffbeb;
+    border-color: #fcd34d;
+    color: #92400e;
+}
+
+.snippet-panel {
+    position: relative;
+}
+
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+}
+
+.btn-sm {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+}
+
+.diagnostics-output {
+    margin-top: 1rem;
+    min-height: 120px;
+}
+
+.test-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    background: #fafbfc;
+}
+
+.test-card summary {
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.step-list {
+    margin: 0.75rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.step-list li {
+    margin-bottom: 0.75rem;
+}
+
+.expected {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.expected span:first-child {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+}
+
+.badge.pass {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.badge.planned {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.notice {
+    padding: 0.75rem;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 8px;
+}
+
+.mock-banner {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: #fff7ed;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    color: #92400e;
+}
+
+.form-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-grid label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 600;
+}
+
+.form-grid input[type="text"],
+.form-grid input[type="email"] {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
 }

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.support.OAuth2TestClientRegistration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -28,12 +28,14 @@ class PingOneMetadataServiceTest {
     @Mock
     private ClientRegistrationRepository clientRegistrationRepository;
 
+    private PingOneClientProperties properties;
     private PingOneMetadataService metadataService;
 
     @BeforeEach
     void setUp() {
-        metadataService = new PingOneMetadataService(webClient, clientRegistrationRepository);
-        ReflectionTestUtils.setField(metadataService, "configuredJwksUri", "");
+        properties = new PingOneClientProperties();
+        properties.setRegistrationId(OAuth2TestClientRegistration.REGISTRATION_ID);
+        metadataService = new PingOneMetadataService(webClient, properties, clientRegistrationRepository);
         lenient()
                 .when(clientRegistrationRepository.findByRegistrationId(OAuth2TestClientRegistration.REGISTRATION_ID))
                 .thenReturn(OAuth2TestClientRegistration.pingone());
@@ -46,7 +48,7 @@ class PingOneMetadataServiceTest {
 
     @Test
     void resolveJwksUriPrefersConfiguredOverride() {
-        ReflectionTestUtils.setField(metadataService, "configuredJwksUri", "https://override.example.com/jwks");
+        properties.getMetadata().setJwksUriOverride("https://override.example.com/jwks");
 
         assertThat(metadataService.resolveJwksUri()).isEqualTo("https://override.example.com/jwks");
     }

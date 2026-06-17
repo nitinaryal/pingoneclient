@@ -23,4 +23,17 @@ spring:
             user-name-attribute: sub
 
 pingone:
-  post-logout-redirect-uri: http://localhost:8080/
+  application-type: oidc-web-app
+  registration-id: pingone
+  provider-id: pingone
+  security:
+    public-paths:
+      - /
+      - /tool
+      - /tool/**
+      - /mock/**
+      - /error
+      - /css/**
+      - /js/**
+      - /webjars/**
+    post-logout-redirect-uri: http://localhost:8080/

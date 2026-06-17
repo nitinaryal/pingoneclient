@@ -9,12 +9,22 @@
 </head>
 <body>
 <main class="container">
+    <div class="mock-banner" th:if="${pingoneMockMode}">
+        <strong>Mock mode</strong> — PingOne OIDC is emulated locally (<code>mock=true</code>). No real PingOne tenant is used.
+    </div>
+
     <h1>PingOne OIDC Test Client</h1>
     <p class="subtitle">Minimal Spring Boot client for validating PingOne authentication flows.</p>
 
+    <div class="card">
+        <h2>Client Integration Tool</h2>
+        <p class="help-text">Select application type, configure values, test login/logout, and copy code snippets.</p>
+        <a class="btn btn-primary" th:href="@{/tool}">Open Client Tool</a>
+    </div>
+
     <div class="card" sec:authorize="!isAuthenticated()">
         <p>You are not signed in.</p>
-        <a class="btn btn-primary" th:href="@{/oauth2/authorization/pingone}">Login with PingOne</a>
+        <a class="btn btn-primary" th:href="@{${pingoneLoginPath}}">Login with PingOne</a>
     </div>
 
     <div class="card" sec:authorize="isAuthenticated()">

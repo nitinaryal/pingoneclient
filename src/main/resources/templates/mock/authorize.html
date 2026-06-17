@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Mock PingOne Sign-In</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+</head>
+<body>
+<main class="container">
+    <div class="mock-banner">
+        <strong>Mock PingOne</strong> — local OIDC provider (mock=true). This page simulates PingOne authorization.
+    </div>
+
+    <div class="card">
+        <h1>Mock PingOne Sign-In</h1>
+        <p class="subtitle">Submit to complete the authorization code flow and return to the test client.</p>
+
+        <form th:action="@{${mockAuthorizePath}}" method="post" class="form-grid">
+            <input type="hidden" name="client_id" th:value="${clientId}"/>
+            <input type="hidden" name="redirect_uri" th:value="${redirectUri}"/>
+            <input type="hidden" name="response_type" th:value="${responseType}"/>
+            <input type="hidden" name="scope" th:value="${scope}"/>
+            <input type="hidden" name="state" th:value="${state}"/>
+            <input type="hidden" name="nonce" th:value="${nonce}"/>
+            <input type="hidden" name="code_challenge" th:value="${codeChallenge}"/>
+            <input type="hidden" name="code_challenge_method" th:value="${codeChallengeMethod}"/>
+
+            <label>
+                Subject (sub)
+                <input type="text" name="sub" th:value="${defaultSub}" required/>
+            </label>
+            <label>
+                Email
+                <input type="email" name="email" th:value="${defaultEmail}" required/>
+            </label>
+            <label>
+                Display name
+                <input type="text" name="name" th:value="${defaultName}" required/>
+            </label>
+
+            <button type="submit" class="btn btn-primary">Sign in (mock)</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

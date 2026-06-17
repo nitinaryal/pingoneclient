@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>PingOne Client Integration Tool</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_parameter" th:content="${_csrf.parameterName}"/>
+    <meta name="runtime-login-path" th:content="${runtimeLoginPath}"/>
+</head>
+<body>
+<main class="container container-wide">
+    <header class="page-header">
+        <div>
+            <h1>PingOne Client Integration Tool</h1>
+            <p class="subtitle">Configure, test, and copy adoption artifacts before production.</p>
+            <p class="subtitle runtime-badge">
+                Runtime: <strong th:text="${runtimeType}">oidc-web-app</strong>
+                · registration <code th:text="${runtimeRegistrationId}">pingone</code>
+                <span sec:authorize="isAuthenticated()"> · signed in as <strong sec:authentication="name">user</strong></span>
+            </p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-link" th:href="@{/}">Home</a>
+            <a class="btn btn-link" th:href="@{/dashboard}" sec:authorize="isAuthenticated()">Dashboard</a>
+        </div>
+    </header>
+
+    <div class="tool-layout">
+        <section class="card">
+            <h2>1. Select PingOne Application Type</h2>
+            <p class="help-text">Choose the PingOne application type you are integrating. Fields and tests update based on selection.</p>
+            <div id="type-selector" class="type-grid"></div>
+            <div id="type-summary" class="type-summary"></div>
+        </section>
+
+        <section class="card">
+            <h2>2. Configuration Wizard</h2>
+            <p class="help-text">Import PingOne OIDC discovery JSON, then review and override any value below. Required fields are marked with <span class="required">*</span>.</p>
+
+            <div class="discovery-import-panel">
+                <h3>Import OIDC Discovery Document</h3>
+                <p class="help-text">Paste JSON from <code>{issuer}/.well-known/openid-configuration</code> (e.g. <code>https://auth.pingone.com/&lt;env-id&gt;/as/.well-known/openid-configuration</code>) or upload a <code>.json</code> file.</p>
+                <textarea id="discovery-json-input" class="discovery-json-input" rows="8" placeholder='{"issuer":"https://auth.pingone.com/{env-id}/as","authorization_endpoint":"...","token_endpoint":"..."}'></textarea>
+                <div class="actions discovery-import-actions">
+                    <input type="file" id="discovery-file-input" accept=".json,application/json" class="visually-hidden"/>
+                    <button type="button" id="btn-discovery-upload" class="btn">Upload JSON File</button>
+                    <button type="button" id="btn-discovery-apply" class="btn btn-primary">Apply JSON to Form</button>
+                    <button type="button" id="btn-discovery-fetch" class="btn">Fetch from Issuer URI</button>
+                    <button type="button" id="btn-discovery-clear" class="btn btn-secondary">Clear Import</button>
+                </div>
+                <pre id="discovery-import-status" class="discovery-import-status">No discovery document imported yet.</pre>
+            </div>
+
+            <form id="config-form" class="config-form"></form>
+            <div class="actions">
+                <button type="button" id="btn-generate" class="btn btn-primary">Generate Adoption Artifacts</button>
+                <button type="button" id="btn-load-runtime" class="btn">Load Current Runtime Config</button>
+            </div>
+        </section>
+
+        <section class="card" id="artifacts-section">
+            <h2>3. Adoption Artifacts (copy to your project)</h2>
+            <p class="help-text">
+                <strong>Step 1:</strong> Complete section 2 and click <strong>Generate Adoption Artifacts</strong>.
+                <strong>Step 2:</strong> Use the tabs below to switch between YAML, environment variables, Java notes, and PingOne Admin checklist.
+                <strong>Step 3:</strong> Click <strong>Copy</strong> to copy the active tab into your project.
+            </p>
+            <p id="artifacts-status" class="artifacts-status">No artifacts generated yet.</p>
+            <div class="snippet-tabs" id="snippet-tabs">
+                <button type="button" class="snippet-tab active" data-tab="yaml">application.yml</button>
+                <button type="button" class="snippet-tab" data-tab="env">Environment Variables</button>
+                <button type="button" class="snippet-tab" data-tab="java">Java Integration</button>
+                <button type="button" class="snippet-tab" data-tab="admin">PingOne Admin Checklist</button>
+            </div>
+            <div class="snippet-panel">
+                <button type="button" class="btn btn-sm copy-btn" data-copy-target="snippet-content">Copy</button>
+                <pre id="snippet-content" class="json-block">Complete section 2, then click "Generate Adoption Artifacts". After that, use the tabs above to view YAML, env vars, Java integration notes, and the PingOne admin checklist.</pre>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>4. Runtime Diagnostics</h2>
+            <p class="help-text">Validates the currently running application configuration (not the wizard form).</p>
+            <button type="button" id="btn-diagnostics" class="btn btn-primary">Run Connectivity Checks</button>
+            <pre id="diagnostics-output" class="json-block diagnostics-output">Click "Run Connectivity Checks" to test issuer metadata and JWKS.</pre>
+        </section>
+
+        <section class="card">
+            <h2>5. Critical Functionality Test Suite</h2>
+            <p class="help-text">Execute tests against this running template. Expand each test to see investigation steps.</p>
+            <div id="test-suite"></div>
+        </section>
+    </div>
+</main>
+
+<script type="application/json" id="tool-catalog-json" th:text="${catalogJson}"></script>
+<script th:src="@{/js/client-tool.js}"></script>
+</body>
+</html>
