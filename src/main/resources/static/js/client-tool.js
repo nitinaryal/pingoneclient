@@ -20,6 +20,10 @@
     const artifactsStatus = document.getElementById('artifacts-status');
     const artifactsSection = document.getElementById('artifacts-section');
     const snippetTabs = document.getElementById('snippet-tabs');
+    const toolActionBanner = document.getElementById('tool-action-banner');
+    const testSuiteStatus = document.getElementById('test-suite-status');
+    const diagnosticsStatus = document.getElementById('diagnostics-status');
+    const testsSection = document.getElementById('tests-section');
 
     const SNIPPET_TAB_LABELS = {
         yaml: 'application.yml',
@@ -40,6 +44,114 @@
         { id: 'discovery-endpoints', title: 'OIDC Provider Endpoints (override discovery)' },
         { id: 'discovery-metadata', title: 'OIDC Discovery Metadata (reference)' }
     ];
+
+    function logToolAction(action, detail) {
+        console.info('[PingOne Client Tool]', action + ':', detail);
+    }
+
+    function setStatusElement(element, message, tone) {
+        if (!element) {
+            return;
+        }
+        element.textContent = message;
+        element.className = element.id === 'artifacts-status'
+            ? 'artifacts-status' + (tone ? ' ' + tone : '')
+            : 'action-status' + (tone ? ' ' + tone : '');
+    }
+
+    function setActionBanner(message, tone) {
+        if (!toolActionBanner) {
+            return;
+        }
+        if (!message) {
+            toolActionBanner.textContent = '';
+            toolActionBanner.className = 'tool-action-banner hidden';
+            return;
+        }
+        toolActionBanner.textContent = message;
+        toolActionBanner.className = 'tool-action-banner' + (tone ? ' ' + tone : '');
+    }
+
+    function setTestSuiteStatus(message, tone) {
+        setStatusElement(testSuiteStatus, message, tone);
+    }
+
+    function setDiagnosticsStatus(message, tone) {
+        setStatusElement(diagnosticsStatus, message, tone);
+    }
+
+    async function refreshAuthStatus() {
+        try {
+            const response = await fetch('/tool/api/auth/status', { cache: 'no-store' });
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            const messageEl = document.getElementById('auth-status-message');
+            const loginBtn = document.getElementById('btn-tool-login');
+            const logoutBtn = document.getElementById('btn-tool-logout');
+            if (messageEl) {
+                messageEl.innerHTML = data.authenticated
+                    ? 'Signed in as <strong>' + escapeHtml(data.principalName || 'user') + '</strong>.'
+                    : 'You are not signed in.';
+            }
+            if (loginBtn) {
+                loginBtn.hidden = !!data.authenticated;
+            }
+            if (logoutBtn) {
+                logoutBtn.hidden = !data.authenticated;
+            }
+        } catch (error) {
+            console.warn('Failed to refresh authentication status', error);
+        }
+    }
+
+    function submitLogoutForm() {
+        const csrfParam = document.querySelector('meta[name=_csrf_parameter]')?.content || '_csrf';
+        const csrfToken = document.querySelector('meta[name=_csrf]')?.content || '';
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = '/logout';
+        form.className = 'inline-form';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = csrfParam;
+        input.value = csrfToken;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    async function runToolOAuthLogout() {
+        const buttons = document.querySelectorAll('#btn-tool-logout, .run-tool-logout');
+        setActionBanner('Preparing logout (local session + PingOne end session)...', 'pending');
+        setTestSuiteStatus('Preparing logout using the same flow as dashboard logout...', 'pending');
+        buttons.forEach(btn => { btn.disabled = true; });
+        logToolAction('logout', 'preparing');
+        try {
+            const saved = await persistWizardConfig();
+            if (!saved) {
+                throw new Error('Could not save wizard configuration before logout');
+            }
+            const response = await fetch('/tool/api/oauth/logout/prepare', {
+                method: 'POST',
+                headers: jsonRequestHeaders()
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const result = await response.json();
+            logToolAction('logout', result.message || 'submitting POST /logout');
+            setActionBanner(result.message, 'pending');
+            setTestSuiteStatus('Redirecting to PingOne end session endpoint...', 'pending');
+            submitLogoutForm();
+        } catch (error) {
+            logToolAction('logout', 'failed: ' + error.message);
+            setActionBanner('Logout failed: ' + error.message, 'error');
+            setTestSuiteStatus('Logout could not start. See message above.', 'error');
+            buttons.forEach(btn => { btn.disabled = false; });
+        }
+    }
 
     function escapeHtml(value) {
         return String(value)
@@ -146,6 +258,7 @@
         );
         if (result.sessionSaved) {
             setArtifactsStatus('Discovery import merged with application.yml defaults and saved to your session.', 'success');
+            setActionBanner('Discovery import saved to encrypted session.', 'success');
         }
     }
 
@@ -174,9 +287,12 @@
             body: JSON.stringify(currentConfigPayload())
         });
         if (!response.ok) {
-            console.warn('Failed to persist wizard configuration', await response.text());
+            const message = await response.text();
+            console.warn('Failed to persist wizard configuration', message);
+            logToolAction('persist', 'failed: ' + message);
             return false;
         }
+        logToolAction('persist', 'wizard configuration saved to encrypted session');
         return true;
     }
 
@@ -216,9 +332,13 @@
         if (!response.ok) {
             const message = await response.text();
             setDiscoveryImportStatus('Import failed: ' + message);
+            setActionBanner('Discovery import failed: ' + message, 'error');
+            logToolAction('discovery-import', 'failed: ' + message);
             return;
         }
-        applyDiscoveryResult(await response.json(), 'JSON import');
+        const result = await response.json();
+        applyDiscoveryResult(result, 'JSON import');
+        logToolAction('discovery-import', 'applied ' + Object.keys(result.fieldValues || {}).length + ' field(s)');
     }
 
     async function fetchDiscoveryFromIssuer() {
@@ -238,6 +358,7 @@
             }
         }
         setDiscoveryImportStatus('Fetching discovery from ' + issuer + ' ...');
+        setActionBanner('Fetching OIDC discovery document from issuer...', 'pending');
         const response = await fetch(
             '/tool/api/discovery/fetch?issuerUri=' + encodeURIComponent(issuer)
                 + '&applicationType=' + encodeURIComponent(selectedType.configValue)
@@ -245,6 +366,8 @@
         if (!response.ok) {
             const message = await response.text();
             setDiscoveryImportStatus('Fetch failed: ' + message);
+            setActionBanner('Discovery fetch failed: ' + message, 'error');
+            logToolAction('discovery-fetch', 'failed: ' + message);
             return;
         }
         const result = await response.json();
@@ -252,6 +375,7 @@
             discoveryJsonInput.value = JSON.stringify(result.rawDocument, null, 2);
         }
         applyDiscoveryResult(result, 'Issuer fetch');
+        logToolAction('discovery-fetch', 'completed for ' + issuer);
     }
 
     function clearDiscoveryImport() {
@@ -336,36 +460,81 @@
             : '(No content returned for ' + (SNIPPET_TAB_LABELS[activeSnippetTab] || activeSnippetTab) + ')';
     }
 
-    async function runToolOAuthLogin() {
+    async function runToolOAuthLogin(event) {
+        const btn = event?.currentTarget || document.getElementById('btn-tool-login');
         if (!validateForm()) {
+            setTestSuiteStatus('Login blocked: fill required fields in section 2 (marked with *).', 'error');
+            setActionBanner('Complete required wizard fields before login.', 'error');
             return;
         }
-        await persistWizardConfig();
-        const response = await fetch('/tool/api/oauth/login', {
-            method: 'POST',
-            headers: jsonRequestHeaders(),
-            body: JSON.stringify({
-                applicationType: selectedType.configValue,
-                values: collectFormValues()
-            })
-        });
-        if (!response.ok) {
-            const message = await response.text();
-            alert('Login setup failed: ' + message);
-            return;
+        const originalLabel = btn?.textContent;
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Preparing login...';
         }
-        const result = await response.json();
-        window.location.href = result.loginPath;
+        setActionBanner('Saving wizard configuration and preparing PingOne authorization redirect...', 'pending');
+        setTestSuiteStatus('Preparing login with wizard Client & Application Settings...', 'pending');
+        logToolAction('login', 'preparing');
+        try {
+            const saved = await persistWizardConfig();
+            if (!saved) {
+                throw new Error('Could not save wizard configuration to encrypted session');
+            }
+            const response = await fetch('/tool/api/oauth/login', {
+                method: 'POST',
+                headers: jsonRequestHeaders(),
+                body: JSON.stringify({
+                    applicationType: selectedType.configValue,
+                    values: collectFormValues()
+                })
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const result = await response.json();
+            logToolAction('login', result.message || ('redirecting to ' + result.loginPath));
+            setActionBanner(result.message || 'Redirecting to PingOne authorization endpoint...', 'pending');
+            setTestSuiteStatus('Redirecting to PingOne authorization endpoint...', 'pending');
+            window.location.href = result.loginPath;
+        } catch (error) {
+            logToolAction('login', 'failed: ' + error.message);
+            setActionBanner('Login setup failed: ' + error.message, 'error');
+            setTestSuiteStatus('Login could not start. Fix configuration and try again.', 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = originalLabel;
+            }
+        }
     }
 
     function showOAuthReturnMessage() {
         const params = new URLSearchParams(window.location.search);
+        let changed = false;
         if (params.get('oauth') === 'success') {
-            setArtifactsStatus('Login succeeded using wizard configuration. You can run logout or other tests below.', 'success');
+            setActionBanner('OAuth login completed successfully using your wizard configuration.', 'success');
+            setTestSuiteStatus('Login succeeded. You are signed in and can run logout or OIDC validation tests.', 'success');
+            logToolAction('login', 'completed successfully');
+            refreshAuthStatus();
+            testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (location.hash !== '#tests') {
                 location.hash = 'tests';
             }
             params.delete('oauth');
+            changed = true;
+        }
+        if (params.get('logout') === 'success') {
+            setActionBanner('Logout completed. Local session cleared and PingOne end session finished.', 'success');
+            setTestSuiteStatus('Logout succeeded (same flow as dashboard). You are signed out.', 'success');
+            logToolAction('logout', 'completed successfully');
+            refreshAuthStatus();
+            testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (location.hash !== '#tests') {
+                location.hash = 'tests';
+            }
+            params.delete('logout');
+            changed = true;
+        }
+        if (changed) {
             const query = params.toString();
             const nextUrl = window.location.pathname + (query ? '?' + query : '') + window.location.hash;
             window.history.replaceState({}, '', nextUrl);
@@ -390,18 +559,13 @@
             let action = '';
             if (test.runnableInTemplate) {
                 if (test.id === 'login') {
-                    action = `<button type="button" class="btn btn-sm btn-primary run-tool-login">Run Login (wizard config)</button>`;
+                    action = `<button type="button" class="btn btn-sm btn-primary run-tool-login">Login with PingOne (wizard config)</button>`;
                 } else if (test.id === 'logout') {
-                    const csrfParam = document.querySelector('meta[name=_csrf_parameter]')?.content || '_csrf';
-                    const csrfToken = document.querySelector('meta[name=_csrf]')?.content || '';
-                    action = `<form action="/logout" method="post" class="inline-form tool-logout-form">
-                        <input type="hidden" name="${escapeHtml(csrfParam)}" value="${escapeHtml(csrfToken)}"/>
-                        <button type="submit" class="btn btn-sm btn-secondary">Run Logout</button>
-                    </form>`;
+                    action = `<button type="button" class="btn btn-sm btn-secondary run-tool-logout">Logout (PingOne end session)</button>`;
                 } else if (test.id === 'connectivity') {
                     action = `<button type="button" class="btn btn-sm btn-primary run-connectivity">Run Check</button>`;
                 } else if (test.httpMethod === 'GET') {
-                    action = `<a class="btn btn-sm btn-primary" href="${escapeHtml(path)}">Run Test</a>`;
+                    action = `<a class="btn btn-sm btn-primary run-get-test" href="${escapeHtml(path)}" target="_blank" rel="noopener noreferrer" data-test-name="${escapeHtml(test.name)}">Run Test</a>`;
                 }
             }
             action += ` <a class="btn btn-sm" href="/tool/test/${escapeHtml(test.id)}">View Steps</a>`;
@@ -426,10 +590,15 @@
         testSuite.querySelectorAll('.run-tool-login').forEach(btn => {
             btn.addEventListener('click', runToolOAuthLogin);
         });
-        testSuite.querySelectorAll('.tool-logout-form').forEach(form => {
-            form.addEventListener('submit', event => {
-                event.preventDefault();
-                persistWizardConfig().finally(() => form.submit());
+        testSuite.querySelectorAll('.run-tool-logout').forEach(btn => {
+            btn.addEventListener('click', runToolOAuthLogout);
+        });
+        testSuite.querySelectorAll('.run-get-test').forEach(link => {
+            link.addEventListener('click', () => {
+                const testName = link.dataset.testName || link.getAttribute('href');
+                setTestSuiteStatus('Opened "' + testName + '" in a new browser tab.', 'info');
+                setActionBanner('OIDC validation test opened in a new tab. Return here to continue the test suite.', 'info');
+                logToolAction('test', 'opened ' + testName + ' in new tab');
             });
         });
     }
@@ -451,6 +620,8 @@
         }
         await persistWizardConfig();
         setArtifactsStatus('Generating artifacts...', 'pending');
+        setActionBanner('Generating adoption artifacts from wizard configuration...', 'pending');
+        logToolAction('generate', 'started');
         const response = await fetch('/tool/api/generate', {
             method: 'POST',
             headers: jsonRequestHeaders(),
@@ -463,6 +634,8 @@
             const message = await response.text();
             snippetContent.textContent = 'Generate failed (' + response.status + ').\n\n' + message;
             setArtifactsStatus('Generation failed (' + response.status + '). See panel below.', 'error');
+            setActionBanner('Artifact generation failed (' + response.status + ').', 'error');
+            logToolAction('generate', 'failed: ' + message);
             return false;
         }
         generated = await response.json();
@@ -471,6 +644,8 @@
             'Artifacts generated. Use the tabs to view application.yml, Environment Variables, Java Integration, and PingOne Admin Checklist. Click Copy to copy the active tab.',
             'success'
         );
+        setActionBanner('Adoption artifacts generated successfully.', 'success');
+        logToolAction('generate', 'completed');
         if (!opts.silentScroll) {
             artifactsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -491,19 +666,43 @@
 
     async function runDiagnostics() {
         await persistWizardConfig();
+        setDiagnosticsStatus('Running connectivity checks against the running application...', 'pending');
+        setActionBanner('Running runtime diagnostics (issuer metadata and JWKS)...', 'pending');
         diagnosticsOutput.textContent = 'Running checks...';
-        const response = await fetch('/tool/api/diagnostics');
-        const data = await response.json();
-        diagnosticsOutput.textContent = JSON.stringify(data, null, 2);
-        if (location.hash !== '#diagnostics') {
-            location.hash = 'diagnostics';
+        logToolAction('diagnostics', 'started');
+        try {
+            const response = await fetch('/tool/api/diagnostics');
+            if (!response.ok) {
+                throw new Error('Diagnostics request failed with status ' + response.status);
+            }
+            const data = await response.json();
+            diagnosticsOutput.textContent = JSON.stringify(data, null, 2);
+            const metadata = data.connectivityChecks?.metadata;
+            const jwks = data.connectivityChecks?.jwks;
+            const allPass = metadata?.status === 'PASS' && jwks?.status === 'PASS';
+            const summary = allPass
+                ? 'Connectivity checks passed. Metadata and JWKS endpoints are reachable.'
+                : 'Some connectivity checks failed. Review the JSON output below.';
+            setDiagnosticsStatus(summary, allPass ? 'success' : 'error');
+            setActionBanner(summary, allPass ? 'success' : 'error');
+            logToolAction('diagnostics', allPass ? 'all checks passed' : 'one or more checks failed');
+            if (location.hash !== '#diagnostics') {
+                location.hash = 'diagnostics';
+            }
+        } catch (error) {
+            diagnosticsOutput.textContent = String(error);
+            setDiagnosticsStatus('Diagnostics failed: ' + error.message, 'error');
+            setActionBanner('Diagnostics failed: ' + error.message, 'error');
+            logToolAction('diagnostics', 'failed: ' + error.message);
         }
     }
 
     async function loadRuntimeDiagnostics() {
+        setActionBanner('Loading runtime defaults from application.yml...', 'pending');
         const response = await fetch('/tool/api/runtime-defaults');
         if (!response.ok) {
-            alert('Failed to load runtime defaults.');
+            setActionBanner('Failed to load runtime defaults.', 'error');
+            logToolAction('load-runtime', 'failed');
             return;
         }
         const values = await response.json();
@@ -513,6 +712,8 @@
             'Loaded application.yml runtime defaults into the wizard and saved to encrypted session.',
             'success'
         );
+        setActionBanner('Runtime defaults loaded into the wizard and saved to session.', 'success');
+        logToolAction('load-runtime', 'completed');
     }
 
     function bindTabs() {
@@ -606,6 +807,8 @@
         document.getElementById('btn-generate').addEventListener('click', () => generateArtifacts());
         document.getElementById('btn-diagnostics').addEventListener('click', runDiagnostics);
         document.getElementById('btn-load-runtime').addEventListener('click', loadRuntimeDiagnostics);
+        document.getElementById('btn-tool-login')?.addEventListener('click', runToolOAuthLogin);
+        document.getElementById('btn-tool-logout')?.addEventListener('click', runToolOAuthLogout);
     }
 
     async function init(options) {
@@ -622,6 +825,7 @@
             applyCatalog(data);
             await loadSavedWizardConfig();
             showOAuthReturnMessage();
+            await refreshAuthStatus();
             if (location.hash === '#diagnostics') {
                 runDiagnostics();
             }

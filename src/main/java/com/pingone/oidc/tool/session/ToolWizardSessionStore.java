@@ -64,6 +64,23 @@ public class ToolWizardSessionStore {
         return Boolean.TRUE.equals(session.getAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGIN));
     }
 
+    public void setToolInitiatedLogout(boolean toolInitiatedLogout) {
+        HttpSession session = currentSession();
+        if (toolInitiatedLogout) {
+            session.setAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGOUT, Boolean.TRUE);
+        } else {
+            session.removeAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGOUT);
+        }
+    }
+
+    public boolean isToolInitiatedLogout(HttpSession session) {
+        return Boolean.TRUE.equals(session.getAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGOUT));
+    }
+
+    public void clearToolInitiatedLogoutFlag(HttpSession session) {
+        session.removeAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGOUT);
+    }
+
     public void clearToolInitiatedLoginFlag(HttpSession session) {
         session.removeAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGIN);
     }
@@ -73,6 +90,7 @@ public class ToolWizardSessionStore {
         if (session != null) {
             session.removeAttribute(ENCRYPTED_CONFIG_ATTRIBUTE);
             session.removeAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGIN);
+            session.removeAttribute(ToolSessionOAuthAttributes.TOOL_INITIATED_LOGOUT);
         }
     }
 

@@ -48,7 +48,7 @@
                 <form th:if="${testFlow.httpMethod() == 'POST' and testFlow.id() == 'logout'}"
                       th:action="@{/logout}" method="post" class="inline-form">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                    <button type="submit" class="btn btn-secondary">Run Logout Test</button>
+                    <button type="submit" class="btn btn-secondary">Logout (PingOne end session)</button>
                 </form>
                 <a th:if="${testFlow.httpMethod() == 'GET' and testFlow.id() != 'login' and testFlow.id() != 'connectivity'}"
                    class="btn btn-primary" th:href="@{${testFlow.actionPath()}}">Run Test</a>

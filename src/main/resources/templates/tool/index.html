@@ -12,6 +12,10 @@
 </head>
 <body>
 <main class="container container-wide">
+    <div class="mock-banner" th:if="${pingoneMockMode}">
+        <strong>Mock mode</strong> — PingOne OIDC is emulated locally. Tool login/logout uses the same end-session flow against the mock provider.
+    </div>
+
     <header class="page-header">
         <div>
             <h1>PingOne Client Integration Tool</h1>
@@ -84,13 +88,33 @@
         <section class="card">
             <h2>4. Runtime Diagnostics</h2>
             <p class="help-text">Validates the currently running application configuration (not the wizard form).</p>
+            <p id="diagnostics-status" class="action-status">Click <strong>Run Connectivity Checks</strong> to test issuer metadata and JWKS.</p>
             <button type="button" id="btn-diagnostics" class="btn btn-primary">Run Connectivity Checks</button>
-            <pre id="diagnostics-output" class="json-block diagnostics-output">Click "Run Connectivity Checks" to test issuer metadata and JWKS.</pre>
+            <pre id="diagnostics-output" class="json-block diagnostics-output">Results will appear here.</pre>
         </section>
 
-        <section class="card">
+        <section class="card" id="tests-section">
             <h2>5. Critical Functionality Test Suite</h2>
-            <p class="help-text">Execute tests against this running template. <strong>Run Login</strong> uses the Client &amp; Application Settings from section 2 (encrypted server session) — not the home page or dashboard runtime <code>application.yml</code>. After a successful login you return here, not <code>/dashboard</code>.</p>
+            <p class="help-text">Execute tests against this running template. <strong>Run Login</strong> uses wizard settings from section 2 — not dashboard runtime <code>application.yml</code>. After login you return here (not <code>/dashboard</code>). Logout uses the same PingOne end-session flow as the dashboard.</p>
+
+            <div id="tool-action-banner" class="tool-action-banner hidden" role="status" aria-live="polite"></div>
+
+            <div class="auth-status-card" id="auth-status-card">
+                <h3>Authentication Status</h3>
+                <p id="auth-status-message" class="auth-status-message">
+                    <span sec:authorize="!isAuthenticated()">You are not signed in.</span>
+                    <span sec:authorize="isAuthenticated()">Signed in as <strong sec:authentication="name">user</strong>.</span>
+                </p>
+                <div class="actions auth-status-actions">
+                    <button type="button" id="btn-tool-login" class="btn btn-primary"
+                            sec:authorize="!isAuthenticated()">Login with PingOne (wizard config)</button>
+                    <button type="button" id="btn-tool-logout" class="btn btn-secondary"
+                            sec:authorize="isAuthenticated()">Logout (PingOne end session)</button>
+                    <a class="btn btn-link" th:href="@{/dashboard}" sec:authorize="isAuthenticated()">Open Dashboard</a>
+                </div>
+            </div>
+
+            <p id="test-suite-status" class="action-status">Ready to run tests using your wizard configuration.</p>
             <div id="test-suite"></div>
         </section>
     </div>

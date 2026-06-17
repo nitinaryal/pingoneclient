@@ -90,6 +90,22 @@ class ClientToolControllerTest {
     }
 
     @Test
+    void toolOAuthLogoutPrepareSetsReturnToTool() throws Exception {
+        mockMvc.perform(post("/tool/api/oauth/logout/prepare")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.logoutPath").value("/logout"))
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void authStatusEndpointReportsAnonymousByDefault() throws Exception {
+        mockMvc.perform(get("/tool/api/auth/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.authenticated").value(false));
+    }
+
+    @Test
     void sessionPersistAndLoadRoundTrip() throws Exception {
         String body =
                 """

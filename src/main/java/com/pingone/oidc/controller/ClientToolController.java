@@ -13,9 +13,11 @@ import com.pingone.oidc.tool.model.GeneratedAdoptionArtifacts;
 import com.pingone.oidc.tool.model.TestFlowDefinition;
 import com.pingone.oidc.tool.model.ToolWizardSessionView;
 import com.pingone.oidc.tool.oauth.ToolOAuthService;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -133,6 +135,26 @@ public class ClientToolController {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
+    }
+
+    @PostMapping(value = "/tool/api/oauth/logout/prepare", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> prepareOAuthLogout() {
+        return toolOAuthService.prepareLogout();
+    }
+
+    @GetMapping(value = "/tool/api/auth/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> authStatus(Authentication authentication) {
+        Map<String, Object> status = new LinkedHashMap<>();
+        boolean authenticated = authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal());
+        status.put("authenticated", authenticated);
+        if (authenticated) {
+            status.put("principalName", authentication.getName());
+        }
+        return status;
     }
 
     @PostMapping(value = "/tool/api/session/persist", produces = MediaType.APPLICATION_JSON_VALUE)

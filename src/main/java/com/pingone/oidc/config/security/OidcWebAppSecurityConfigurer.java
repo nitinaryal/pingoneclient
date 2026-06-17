@@ -3,8 +3,8 @@ package com.pingone.oidc.config.security;
 import com.pingone.oidc.config.properties.PingOneApplicationType;
 import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.tool.oauth.ToolOAuthAuthenticationSuccessHandler;
+import com.pingone.oidc.tool.oauth.ToolOAuthLogoutSuccessHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +12,13 @@ import org.springframework.stereotype.Component;
 public class OidcWebAppSecurityConfigurer implements PingOneSecurityConfigurer {
 
     private final ToolOAuthAuthenticationSuccessHandler toolOAuthAuthenticationSuccessHandler;
+    private final ToolOAuthLogoutSuccessHandler toolOAuthLogoutSuccessHandler;
 
-    public OidcWebAppSecurityConfigurer(ToolOAuthAuthenticationSuccessHandler toolOAuthAuthenticationSuccessHandler) {
+    public OidcWebAppSecurityConfigurer(
+            ToolOAuthAuthenticationSuccessHandler toolOAuthAuthenticationSuccessHandler,
+            ToolOAuthLogoutSuccessHandler toolOAuthLogoutSuccessHandler) {
         this.toolOAuthAuthenticationSuccessHandler = toolOAuthAuthenticationSuccessHandler;
+        this.toolOAuthLogoutSuccessHandler = toolOAuthLogoutSuccessHandler;
     }
 
     @Override
@@ -28,13 +32,9 @@ public class OidcWebAppSecurityConfigurer implements PingOneSecurityConfigurer {
             PingOneClientProperties properties,
             ClientRegistrationRepository clientRegistrationRepository) throws Exception {
 
-        OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler =
-                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        logoutSuccessHandler.setPostLogoutRedirectUri(properties.getSecurity().getPostLogoutRedirectUri());
-
         http.oauth2Login(oauth2 -> oauth2
                         .clientRegistrationRepository(clientRegistrationRepository)
                         .successHandler(toolOAuthAuthenticationSuccessHandler))
-                .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler));
+                .logout(logout -> logout.logoutSuccessHandler(toolOAuthLogoutSuccessHandler));
     }
 }
