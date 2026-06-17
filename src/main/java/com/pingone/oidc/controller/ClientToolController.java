@@ -3,14 +3,15 @@ package com.pingone.oidc.controller;
 import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.tool.ClientAdoptionSnippetService;
 import com.pingone.oidc.tool.ClientToolDiagnosticsService;
-import com.pingone.oidc.tool.OidcDiscoveryImportService;
 import com.pingone.oidc.tool.PingOneApplicationTypeCatalog;
 import com.pingone.oidc.tool.ToolCatalogEmbedService;
+import com.pingone.oidc.tool.ToolWizardConfigService;
 import com.pingone.oidc.tool.model.ApplicationTypeDefinition;
 import com.pingone.oidc.tool.model.ClientToolConfigRequest;
 import com.pingone.oidc.tool.model.DiscoveryApplyResult;
 import com.pingone.oidc.tool.model.GeneratedAdoptionArtifacts;
 import com.pingone.oidc.tool.model.TestFlowDefinition;
+import com.pingone.oidc.tool.model.ToolWizardSessionView;
 import com.pingone.oidc.tool.oauth.ToolOAuthService;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -31,26 +32,26 @@ public class ClientToolController {
     private final PingOneApplicationTypeCatalog catalog;
     private final ClientAdoptionSnippetService snippetService;
     private final ClientToolDiagnosticsService diagnosticsService;
-    private final OidcDiscoveryImportService discoveryImportService;
     private final PingOneClientProperties runtimeProperties;
     private final ToolCatalogEmbedService catalogEmbedService;
     private final ToolOAuthService toolOAuthService;
+    private final ToolWizardConfigService wizardConfigService;
 
     public ClientToolController(
             PingOneApplicationTypeCatalog catalog,
             ClientAdoptionSnippetService snippetService,
             ClientToolDiagnosticsService diagnosticsService,
-            OidcDiscoveryImportService discoveryImportService,
             PingOneClientProperties runtimeProperties,
             ToolCatalogEmbedService catalogEmbedService,
-            ToolOAuthService toolOAuthService) {
+            ToolOAuthService toolOAuthService,
+            ToolWizardConfigService wizardConfigService) {
         this.catalog = catalog;
         this.snippetService = snippetService;
         this.diagnosticsService = diagnosticsService;
-        this.discoveryImportService = discoveryImportService;
         this.runtimeProperties = runtimeProperties;
         this.catalogEmbedService = catalogEmbedService;
         this.toolOAuthService = toolOAuthService;
+        this.wizardConfigService = wizardConfigService;
     }
 
     @GetMapping("/tool")
@@ -90,14 +91,35 @@ public class ClientToolController {
     @PostMapping(value = "/tool/api/generate", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public GeneratedAdoptionArtifacts generate(@RequestBody ClientToolConfigRequest request) {
-        return snippetService.generate(request);
+        wizardConfigService.saveSession(request);
+        return snippetService.generate(wizardConfigService.requireSessionConfig());
+    }
+
+    @GetMapping(value = "/tool/api/session/config", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ToolWizardSessionView sessionConfig() {
+        return wizardConfigService.loadSession();
+    }
+
+    @PostMapping(value = "/tool/api/session/config", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ToolWizardSessionView saveSessionConfig(@RequestBody ClientToolConfigRequest request) {
+        return wizardConfigService.saveSession(request);
+    }
+
+    @GetMapping(value = "/tool/api/runtime-defaults", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, String> runtimeDefaults() {
+        return wizardConfigService.runtimeDefaults();
     }
 
     @PostMapping(value = "/tool/api/discovery/apply", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public DiscoveryApplyResult applyDiscovery(@RequestBody String discoveryJson) {
+    public DiscoveryApplyResult applyDiscovery(
+            @RequestBody String discoveryJson,
+            @RequestParam(required = false) String applicationType) {
         try {
-            return discoveryImportService.applyJson(discoveryJson);
+            return wizardConfigService.applyDiscoveryJson(discoveryJson, applicationType);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
@@ -113,13 +135,20 @@ public class ClientToolController {
         }
     }
 
+    @PostMapping(value = "/tool/api/session/persist", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public ToolWizardSessionView persistSession(@RequestBody ClientToolConfigRequest request) {
+        return wizardConfigService.saveSession(request);
+    }
+
     @GetMapping(value = "/tool/api/discovery/fetch", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public DiscoveryApplyResult fetchDiscovery(
             @RequestParam String issuerUri,
-            @RequestParam(required = false) String discoveryPath) {
+            @RequestParam(required = false) String discoveryPath,
+            @RequestParam(required = false) String applicationType) {
         try {
-            return discoveryImportService.fetchFromIssuer(issuerUri, discoveryPath);
+            return wizardConfigService.fetchDiscovery(issuerUri, discoveryPath, applicationType);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {

@@ -64,6 +64,7 @@
             btn.addEventListener('click', () => {
                 selectedType = catalog.find(t => t.configValue === btn.dataset.type);
                 renderAll();
+                persistWizardConfig();
             });
         });
     }
@@ -134,8 +135,68 @@
         const unmapped = (result.unmappedKeys || []).length
             ? result.unmappedKeys.join(', ')
             : 'none';
+        const defaults = (result.defaultsAppliedKeys || []).length
+            ? result.defaultsAppliedKeys.join(', ')
+            : 'none';
+        const sessionNote = result.sessionSaved
+            ? '\nConfiguration saved in encrypted server session.'
+            : '';
         setDiscoveryImportStatus(
-            `${sourceLabel}: applied ${applied} field(s).\nMapped: ${mapped}\nUnmapped keys: ${unmapped}`
+            `${sourceLabel}: applied ${applied} field(s).\nMapped: ${mapped}\nFilled from application.yml defaults: ${defaults}\nUnmapped keys: ${unmapped}${sessionNote}`
+        );
+        if (result.sessionSaved) {
+            setArtifactsStatus('Discovery import merged with application.yml defaults and saved to your session.', 'success');
+        }
+    }
+
+    function currentConfigPayload() {
+        return {
+            applicationType: selectedType?.configValue || 'oidc-web-app',
+            values: collectFormValues()
+        };
+    }
+
+    function applyFormValues(values) {
+        if (!values) {
+            return;
+        }
+        configForm.querySelectorAll('input[name]').forEach(input => {
+            if (values[input.name] !== undefined) {
+                input.value = values[input.name];
+            }
+        });
+    }
+
+    async function persistWizardConfig() {
+        const response = await fetch('/tool/api/session/persist', {
+            method: 'POST',
+            headers: jsonRequestHeaders(),
+            body: JSON.stringify(currentConfigPayload())
+        });
+        if (!response.ok) {
+            console.warn('Failed to persist wizard configuration', await response.text());
+            return false;
+        }
+        return true;
+    }
+
+    async function loadSavedWizardConfig() {
+        const response = await fetch('/tool/api/session/config', { cache: 'no-store' });
+        if (!response.ok) {
+            return;
+        }
+        const data = await response.json();
+        if (!data.saved) {
+            return;
+        }
+        if (data.applicationType) {
+            selectedType = catalog.find(t => t.configValue === data.applicationType) || selectedType;
+        }
+        renderAll();
+        applyFormValues(data.values);
+        setArtifactsStatus(
+            'Restored wizard configuration from encrypted server session. Tests will reuse these values.',
+            'success'
         );
     }
 
@@ -145,7 +206,9 @@
             alert('Paste OIDC discovery JSON first.');
             return;
         }
-        const response = await fetch('/tool/api/discovery/apply', {
+        const response = await fetch(
+            '/tool/api/discovery/apply?applicationType=' + encodeURIComponent(selectedType.configValue),
+            {
             method: 'POST',
             headers: jsonRequestHeaders(),
             body: json
@@ -175,7 +238,10 @@
             }
         }
         setDiscoveryImportStatus('Fetching discovery from ' + issuer + ' ...');
-        const response = await fetch('/tool/api/discovery/fetch?issuerUri=' + encodeURIComponent(issuer));
+        const response = await fetch(
+            '/tool/api/discovery/fetch?issuerUri=' + encodeURIComponent(issuer)
+                + '&applicationType=' + encodeURIComponent(selectedType.configValue)
+        );
         if (!response.ok) {
             const message = await response.text();
             setDiscoveryImportStatus('Fetch failed: ' + message);
@@ -274,6 +340,7 @@
         if (!validateForm()) {
             return;
         }
+        await persistWizardConfig();
         const response = await fetch('/tool/api/oauth/login', {
             method: 'POST',
             headers: jsonRequestHeaders(),
@@ -327,7 +394,7 @@
                 } else if (test.id === 'logout') {
                     const csrfParam = document.querySelector('meta[name=_csrf_parameter]')?.content || '_csrf';
                     const csrfToken = document.querySelector('meta[name=_csrf]')?.content || '';
-                    action = `<form action="/logout" method="post" class="inline-form">
+                    action = `<form action="/logout" method="post" class="inline-form tool-logout-form">
                         <input type="hidden" name="${escapeHtml(csrfParam)}" value="${escapeHtml(csrfToken)}"/>
                         <button type="submit" class="btn btn-sm btn-secondary">Run Logout</button>
                     </form>`;
@@ -359,6 +426,12 @@
         testSuite.querySelectorAll('.run-tool-login').forEach(btn => {
             btn.addEventListener('click', runToolOAuthLogin);
         });
+        testSuite.querySelectorAll('.tool-logout-form').forEach(form => {
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                persistWizardConfig().finally(() => form.submit());
+            });
+        });
     }
 
     function jsonRequestHeaders() {
@@ -376,6 +449,7 @@
             setArtifactsStatus('Generation blocked: fill all required fields in section 2 (marked with *).', 'error');
             return false;
         }
+        await persistWizardConfig();
         setArtifactsStatus('Generating artifacts...', 'pending');
         const response = await fetch('/tool/api/generate', {
             method: 'POST',
@@ -416,6 +490,7 @@
     }
 
     async function runDiagnostics() {
+        await persistWizardConfig();
         diagnosticsOutput.textContent = 'Running checks...';
         const response = await fetch('/tool/api/diagnostics');
         const data = await response.json();
@@ -426,27 +501,18 @@
     }
 
     async function loadRuntimeDiagnostics() {
-        const response = await fetch('/tool/api/diagnostics');
-        const data = await response.json();
-        const values = {
-            registrationId: data.registrationId || 'pingone',
-            providerId: data.providerId || 'pingone',
-            clientId: '',
-            clientSecret: '',
-            issuerUri: data.issuerUri || '',
-            authorizationUri: data.authorizationUri || '',
-            tokenUri: data.tokenUri || '',
-            userInfoUri: data.userInfoUri || '',
-            jwksUri: data.jwksUri || '',
-            redirectUri: data.redirectUri || '',
-            postLogoutRedirectUri: data.postLogoutRedirectUri || '',
-            scopes: 'openid,profile,email'
-        };
-        configForm.querySelectorAll('input[name]').forEach(input => {
-            if (values[input.name] !== undefined) {
-                input.value = values[input.name];
-            }
-        });
+        const response = await fetch('/tool/api/runtime-defaults');
+        if (!response.ok) {
+            alert('Failed to load runtime defaults.');
+            return;
+        }
+        const values = await response.json();
+        applyFormValues(values);
+        await persistWizardConfig();
+        setArtifactsStatus(
+            'Loaded application.yml runtime defaults into the wizard and saved to encrypted session.',
+            'success'
+        );
     }
 
     function bindTabs() {
@@ -554,6 +620,7 @@
                 data = await fetchCatalog();
             }
             applyCatalog(data);
+            await loadSavedWizardConfig();
             showOAuthReturnMessage();
             if (location.hash === '#diagnostics') {
                 runDiagnostics();

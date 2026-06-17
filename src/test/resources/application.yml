@@ -26,6 +26,9 @@ pingone:
   application-type: oidc-web-app
   registration-id: pingone
   provider-id: pingone
+  tool:
+    session:
+      encryption-password: test-encryption-password
   security:
     public-paths:
       - /

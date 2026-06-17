@@ -14,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -83,6 +85,40 @@ class ClientToolControllerTest {
                         .content(json))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.fieldValues.issuerUri").value("https://auth.pingone.com/env/as"))
-                .andExpect(jsonPath("$.fieldValues.tokenUri").value("https://auth.pingone.com/env/as/token"));
+                .andExpect(jsonPath("$.fieldValues.tokenUri").value("https://auth.pingone.com/env/as/token"))
+                .andExpect(jsonPath("$.sessionSaved").value(true));
+    }
+
+    @Test
+    void sessionPersistAndLoadRoundTrip() throws Exception {
+        String body =
+                """
+                {
+                  "applicationType":"oidc-web-app",
+                  "values":{
+                    "registrationId":"acme",
+                    "clientId":"session-client",
+                    "clientSecret":"session-secret",
+                    "issuerUri":"https://auth.example.com/acme/as"
+                  }
+                }
+                """;
+        MvcResult persistResult = mockMvc.perform(post("/tool/api/session/persist")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved").value(true))
+                .andExpect(jsonPath("$.values.clientId").value("session-client"))
+                .andExpect(jsonPath("$.sensitiveFields").isArray())
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) persistResult.getRequest().getSession(false);
+
+        mockMvc.perform(get("/tool/api/session/config").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saved").value(true))
+                .andExpect(jsonPath("$.values.clientId").value("session-client"))
+                .andExpect(jsonPath("$.values.clientSecret").value("session-secret"));
     }
 }

@@ -70,5 +70,9 @@ pingone:
       - iss
       - aud
       - exp
+  tool:
+    session:
+      # Set PINGONE_TOOL_SESSION_ENCRYPTION_PASSWORD in shared/dev environments for stable encrypted wizard sessions.
+      encryption-password: ${PINGONE_TOOL_SESSION_ENCRYPTION_PASSWORD:}
 
 # Mock mode: enable with -Dmock=true (see application-mock-overlay.yml). Do not define mock: here — it causes a circular placeholder.
