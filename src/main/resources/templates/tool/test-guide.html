@@ -39,9 +39,12 @@
                 · Path: <code th:text="${testFlow.actionPath()}">/path</code>
                 · Requires auth: <code th:text="${testFlow.requiresAuthentication()}">false</code>
             </p>
+            <p class="help-text" th:if="${testFlow.id() == 'login'}">
+                Login tests must be started from the <a th:href="@{/tool}">Client Tool</a> wizard so your Client ID, secret, issuer, and redirect URI are applied.
+            </p>
             <div class="actions" th:if="${testFlow.runnableInTemplate()}">
                 <a th:if="${testFlow.httpMethod() == 'GET' and testFlow.id() == 'login'}"
-                   class="btn btn-primary" th:href="@{${runtimeLoginPath}}">Run Login Test</a>
+                   class="btn btn-primary" th:href="@{/tool}">Open Client Tool to Run Login</a>
                 <form th:if="${testFlow.httpMethod() == 'POST' and testFlow.id() == 'logout'}"
                       th:action="@{/logout}" method="post" class="inline-form">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

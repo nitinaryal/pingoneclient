@@ -11,6 +11,7 @@ import com.pingone.oidc.tool.model.ClientToolConfigRequest;
 import com.pingone.oidc.tool.model.DiscoveryApplyResult;
 import com.pingone.oidc.tool.model.GeneratedAdoptionArtifacts;
 import com.pingone.oidc.tool.model.TestFlowDefinition;
+import com.pingone.oidc.tool.oauth.ToolOAuthService;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,6 +34,7 @@ public class ClientToolController {
     private final OidcDiscoveryImportService discoveryImportService;
     private final PingOneClientProperties runtimeProperties;
     private final ToolCatalogEmbedService catalogEmbedService;
+    private final ToolOAuthService toolOAuthService;
 
     public ClientToolController(
             PingOneApplicationTypeCatalog catalog,
@@ -40,13 +42,15 @@ public class ClientToolController {
             ClientToolDiagnosticsService diagnosticsService,
             OidcDiscoveryImportService discoveryImportService,
             PingOneClientProperties runtimeProperties,
-            ToolCatalogEmbedService catalogEmbedService) {
+            ToolCatalogEmbedService catalogEmbedService,
+            ToolOAuthService toolOAuthService) {
         this.catalog = catalog;
         this.snippetService = snippetService;
         this.diagnosticsService = diagnosticsService;
         this.discoveryImportService = discoveryImportService;
         this.runtimeProperties = runtimeProperties;
         this.catalogEmbedService = catalogEmbedService;
+        this.toolOAuthService = toolOAuthService;
     }
 
     @GetMapping("/tool")
@@ -94,6 +98,16 @@ public class ClientToolController {
     public DiscoveryApplyResult applyDiscovery(@RequestBody String discoveryJson) {
         try {
             return discoveryImportService.applyJson(discoveryJson);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping(value = "/tool/api/oauth/login", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> prepareOAuthLogin(@RequestBody ClientToolConfigRequest request) {
+        try {
+            return toolOAuthService.prepareLogin(request);
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

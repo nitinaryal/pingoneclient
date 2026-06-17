@@ -270,6 +270,41 @@
             : '(No content returned for ' + (SNIPPET_TAB_LABELS[activeSnippetTab] || activeSnippetTab) + ')';
     }
 
+    async function runToolOAuthLogin() {
+        if (!validateForm()) {
+            return;
+        }
+        const response = await fetch('/tool/api/oauth/login', {
+            method: 'POST',
+            headers: jsonRequestHeaders(),
+            body: JSON.stringify({
+                applicationType: selectedType.configValue,
+                values: collectFormValues()
+            })
+        });
+        if (!response.ok) {
+            const message = await response.text();
+            alert('Login setup failed: ' + message);
+            return;
+        }
+        const result = await response.json();
+        window.location.href = result.loginPath;
+    }
+
+    function showOAuthReturnMessage() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('oauth') === 'success') {
+            setArtifactsStatus('Login succeeded using wizard configuration. You can run logout or other tests below.', 'success');
+            if (location.hash !== '#tests') {
+                location.hash = 'tests';
+            }
+            params.delete('oauth');
+            const query = params.toString();
+            const nextUrl = window.location.pathname + (query ? '?' + query : '') + window.location.hash;
+            window.history.replaceState({}, '', nextUrl);
+        }
+    }
+
     function renderTestSuite() {
         const regId = configForm.querySelector('[name="registrationId"]')?.value || 'pingone';
         testSuite.innerHTML = selectedType.testFlows.map(test => {
@@ -288,7 +323,7 @@
             let action = '';
             if (test.runnableInTemplate) {
                 if (test.id === 'login') {
-                    action = `<a class="btn btn-sm btn-primary" href="${escapeHtml(path)}">Run Login</a>`;
+                    action = `<button type="button" class="btn btn-sm btn-primary run-tool-login">Run Login (wizard config)</button>`;
                 } else if (test.id === 'logout') {
                     const csrfParam = document.querySelector('meta[name=_csrf_parameter]')?.content || '_csrf';
                     const csrfToken = document.querySelector('meta[name=_csrf]')?.content || '';
@@ -320,6 +355,9 @@
 
         testSuite.querySelectorAll('.run-connectivity').forEach(btn => {
             btn.addEventListener('click', runDiagnostics);
+        });
+        testSuite.querySelectorAll('.run-tool-login').forEach(btn => {
+            btn.addEventListener('click', runToolOAuthLogin);
         });
     }
 
@@ -516,6 +554,7 @@
                 data = await fetchCatalog();
             }
             applyCatalog(data);
+            showOAuthReturnMessage();
             if (location.hash === '#diagnostics') {
                 runDiagnostics();
             }

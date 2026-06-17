@@ -47,6 +47,31 @@ class ClientToolControllerTest {
     }
 
     @Test
+    void toolOAuthLoginUsesWizardConfig() throws Exception {
+        String body =
+                """
+                {
+                  "applicationType":"oidc-web-app",
+                  "values":{
+                    "registrationId":"acme",
+                    "clientId":"wizard-client",
+                    "clientSecret":"wizard-secret",
+                    "redirectUri":"http://localhost:8080/login/oauth2/code/acme",
+                    "issuerUri":"https://auth.example.com/acme/as"
+                  }
+                }
+                """;
+        mockMvc.perform(post("/tool/api/oauth/login")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.loginPath").value("/oauth2/authorization/acme"))
+                .andExpect(jsonPath("$.usingWizardConfig").value(true))
+                .andExpect(jsonPath("$.clientId").value("wizard-client"));
+    }
+
+    @Test
     void discoveryApplyMapsJson() throws Exception {
         String json =
                 """

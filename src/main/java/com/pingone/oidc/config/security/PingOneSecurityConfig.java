@@ -1,6 +1,9 @@
 package com.pingone.oidc.config.security;
 
 import com.pingone.oidc.config.properties.PingOneClientProperties;
+import com.pingone.oidc.tool.oauth.RuntimeClientRegistrationRepositoryProvider;
+import com.pingone.oidc.tool.oauth.ToolDelegatingClientRegistrationRepository;
+import com.pingone.oidc.tool.oauth.ToolSessionClientRegistrationStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,15 +26,19 @@ public class PingOneSecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http, ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+            HttpSecurity http,
+            ToolSessionClientRegistrationStore sessionStore,
+            RuntimeClientRegistrationRepositoryProvider runtimeRepositoryProvider) throws Exception {
 
         String[] publicPaths = properties.getSecurity().getPublicPaths().toArray(String[]::new);
+        ClientRegistrationRepository oauthClientRegistrationRepository =
+                new ToolDelegatingClientRegistrationRepository(sessionStore, runtimeRepositoryProvider);
 
         http.authorizeHttpRequests(auth -> auth.requestMatchers(publicPaths).permitAll().anyRequest().authenticated());
 
         http.csrf(csrf -> csrf.ignoringRequestMatchers("/mock/**"));
 
-        configurerFactory.resolve().configure(http, properties, clientRegistrationRepository);
+        configurerFactory.resolve().configure(http, properties, oauthClientRegistrationRepository);
 
         return http.build();
     }
