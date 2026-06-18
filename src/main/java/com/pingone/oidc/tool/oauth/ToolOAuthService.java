@@ -1,6 +1,7 @@
 package com.pingone.oidc.tool.oauth;
 
 import com.pingone.oidc.tool.ToolWizardConfigService;
+import com.pingone.oidc.tool.model.ToolOAuthLoginError;
 import com.pingone.oidc.tool.session.ToolWizardSessionStore;
 import com.pingone.oidc.tool.model.ClientToolConfigRequest;
 import java.util.LinkedHashMap;
@@ -18,14 +19,32 @@ public class ToolOAuthService {
     private final ClientToolRegistrationFactory registrationFactory;
     private final ToolWizardConfigService wizardConfigService;
     private final ToolWizardSessionStore wizardSessionStore;
+    private final ToolOAuthPreflightService preflightService;
+    private final ToolOAuthLoginErrorStore loginErrorStore;
 
     public ToolOAuthService(
             ClientToolRegistrationFactory registrationFactory,
             ToolWizardConfigService wizardConfigService,
-            ToolWizardSessionStore wizardSessionStore) {
+            ToolWizardSessionStore wizardSessionStore,
+            ToolOAuthPreflightService preflightService,
+            ToolOAuthLoginErrorStore loginErrorStore) {
         this.registrationFactory = registrationFactory;
         this.wizardConfigService = wizardConfigService;
         this.wizardSessionStore = wizardSessionStore;
+        this.preflightService = preflightService;
+        this.loginErrorStore = loginErrorStore;
+    }
+
+    public Map<String, Object> validateLogin(ClientToolConfigRequest request) {
+        ClientToolConfigRequest saved = wizardConfigService.persistSession(request, false);
+        return toValidationResult(preflightService.validate(saved));
+    }
+
+    public Map<String, Object> consumeLastLoginError() {
+        return loginErrorStore
+                .consume()
+                .map(this::toErrorMap)
+                .orElseGet(() -> Map.of("present", false));
     }
 
     public Map<String, Object> prepareLogin(ClientToolConfigRequest request) {
@@ -48,6 +67,32 @@ public class ToolOAuthService {
                 "message",
                 "Redirecting to PingOne authorization using wizard Client & Application Settings.");
         return result;
+    }
+
+    private Map<String, Object> toValidationResult(ToolOAuthLoginError error) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (error == null) {
+            result.put("valid", true);
+            result.put(
+                    "message",
+                    "Client ID, Client Secret, issuer, and redirect URI passed pre-login checks. Opening PingOne sign-in...");
+            return result;
+        }
+        loginErrorStore.save(error);
+        result.put("valid", false);
+        result.put("error", toErrorMap(error));
+        return result;
+    }
+
+    private Map<String, Object> toErrorMap(ToolOAuthLoginError error) {
+        Map<String, Object> mapped = new LinkedHashMap<>();
+        mapped.put("present", true);
+        mapped.put("phase", error.phase());
+        mapped.put("errorCode", error.errorCode());
+        mapped.put("userMessage", error.userMessage());
+        mapped.put("technicalDetail", error.technicalDetail());
+        mapped.put("hints", error.hints());
+        return mapped;
     }
 
     public Map<String, Object> prepareLogout() {

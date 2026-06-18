@@ -497,6 +497,45 @@ code {
     cursor: not-allowed;
 }
 
+.login-error-panel {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.login-error-panel.hidden {
+    display: none;
+}
+
+.login-error-panel h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+}
+
+.login-error-summary {
+    margin: 0 0 0.75rem;
+    color: #7f1d1d;
+}
+
+.login-error-hints {
+    margin: 0 0 0.75rem 1.25rem;
+    padding: 0;
+    color: #7f1d1d;
+}
+
+.login-error-hints li {
+    margin-bottom: 0.35rem;
+}
+
+.login-error-technical {
+    margin-top: 0.75rem;
+    max-height: 12rem;
+    overflow: auto;
+}
+
 .snippet-panel {
     position: relative;
 }

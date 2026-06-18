@@ -127,6 +127,22 @@ public class ClientToolController {
         }
     }
 
+    @PostMapping(value = "/tool/api/oauth/login/validate", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> validateOAuthLogin(@RequestBody ClientToolConfigRequest request) {
+        try {
+            return toolOAuthService.validateLogin(request);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @GetMapping(value = "/tool/api/oauth/last-error", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> lastOAuthLoginError() {
+        return toolOAuthService.consumeLastLoginError();
+    }
+
     @PostMapping(value = "/tool/api/oauth/login", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public Map<String, Object> prepareOAuthLogin(@RequestBody ClientToolConfigRequest request) {

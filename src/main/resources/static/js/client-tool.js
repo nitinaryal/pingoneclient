@@ -24,6 +24,10 @@
     const testSuiteStatus = document.getElementById('test-suite-status');
     const diagnosticsStatus = document.getElementById('diagnostics-status');
     const testsSection = document.getElementById('tests-section');
+    const loginErrorPanel = document.getElementById('login-error-panel');
+    const loginErrorSummary = document.getElementById('login-error-summary');
+    const loginErrorHints = document.getElementById('login-error-hints');
+    const loginErrorTechnical = document.getElementById('login-error-technical');
 
     const SNIPPET_TAB_LABELS = {
         yaml: 'application.yml',
@@ -151,6 +155,81 @@
             setTestSuiteStatus('Logout could not start. See message above.', 'error');
             buttons.forEach(btn => { btn.disabled = false; });
         }
+    }
+
+    function clearLoginErrorPanel() {
+        if (!loginErrorPanel) {
+            return;
+        }
+        loginErrorPanel.classList.add('hidden');
+        if (loginErrorSummary) {
+            loginErrorSummary.textContent = '';
+        }
+        if (loginErrorHints) {
+            loginErrorHints.innerHTML = '';
+        }
+        if (loginErrorTechnical) {
+            loginErrorTechnical.textContent = '';
+        }
+    }
+
+    function showLoginError(error) {
+        if (!error || !loginErrorPanel) {
+            return;
+        }
+        const code = error.errorCode ? '[' + error.errorCode + '] ' : '';
+        if (loginErrorSummary) {
+            loginErrorSummary.textContent = code + (error.userMessage || 'OAuth login failed.');
+        }
+        if (loginErrorHints) {
+            loginErrorHints.innerHTML = (error.hints || [])
+                .map(hint => '<li>' + escapeHtml(hint) + '</li>')
+                .join('');
+        }
+        if (loginErrorTechnical) {
+            const phase = error.phase ? 'Phase: ' + error.phase + '\n\n' : '';
+            loginErrorTechnical.textContent = phase + (error.technicalDetail || 'No additional technical detail.');
+        }
+        loginErrorPanel.classList.remove('hidden');
+        testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function applyLoginValidationFailure(validation) {
+        const error = validation.error || {};
+        showLoginError(error);
+        setActionBanner(error.userMessage || 'Login validation failed before opening PingOne.', 'error');
+        setTestSuiteStatus('Login blocked by pre-login validation. Fix Client ID, Client Secret, issuer, or redirect URI.', 'error');
+        logToolAction('login', 'validation failed: ' + (error.errorCode || 'unknown'));
+    }
+
+    async function loadLastOAuthLoginError() {
+        const response = await fetch('/tool/api/oauth/last-error', { cache: 'no-store' });
+        if (!response.ok) {
+            return;
+        }
+        const data = await response.json();
+        if (!data.present) {
+            return;
+        }
+        showLoginError(data);
+        setActionBanner(data.userMessage || 'OAuth login failed.', 'error');
+        setTestSuiteStatus('Login failed during sign-in or token exchange. See Login Error details below.', 'error');
+        logToolAction('login', 'failed after redirect: ' + (data.errorCode || 'unknown'));
+    }
+
+    async function validateWizardLoginConfig() {
+        const response = await fetch('/tool/api/oauth/login/validate', {
+            method: 'POST',
+            headers: jsonRequestHeaders(),
+            body: JSON.stringify({
+                applicationType: selectedType.configValue,
+                values: collectFormValues()
+            })
+        });
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        return response.json();
     }
 
     function escapeHtml(value) {
@@ -462,6 +541,7 @@
 
     async function runToolOAuthLogin(event) {
         const btn = event?.currentTarget || document.getElementById('btn-tool-login');
+        clearLoginErrorPanel();
         if (!validateForm()) {
             setTestSuiteStatus('Login blocked: fill required fields in section 2 (marked with *).', 'error');
             setActionBanner('Complete required wizard fields before login.', 'error');
@@ -470,12 +550,26 @@
         const originalLabel = btn?.textContent;
         if (btn) {
             btn.disabled = true;
-            btn.textContent = 'Preparing login...';
+            btn.textContent = 'Validating...';
         }
-        setActionBanner('Saving wizard configuration and preparing PingOne authorization redirect...', 'pending');
-        setTestSuiteStatus('Preparing login with wizard Client & Application Settings...', 'pending');
-        logToolAction('login', 'preparing');
+        setActionBanner('Validating Client ID, Client Secret, and PingOne endpoints before sign-in...', 'pending');
+        setTestSuiteStatus('Running pre-login validation...', 'pending');
+        logToolAction('login', 'validating configuration');
         try {
+            const validation = await validateWizardLoginConfig();
+            if (!validation.valid) {
+                applyLoginValidationFailure(validation);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = originalLabel;
+                }
+                return;
+            }
+            if (btn) {
+                btn.textContent = 'Preparing login...';
+            }
+            setActionBanner(validation.message || 'Preparing PingOne authorization redirect...', 'pending');
+            setTestSuiteStatus('Pre-login validation passed. Preparing authorization redirect...', 'success');
             const saved = await persistWizardConfig();
             if (!saved) {
                 throw new Error('Could not save wizard configuration to encrypted session');
@@ -494,7 +588,7 @@
             const result = await response.json();
             logToolAction('login', result.message || ('redirecting to ' + result.loginPath));
             setActionBanner(result.message || 'Redirecting to PingOne authorization endpoint...', 'pending');
-            setTestSuiteStatus('Redirecting to PingOne authorization endpoint...', 'pending');
+            setTestSuiteStatus('Redirecting to PingOne sign-in page...', 'pending');
             window.location.href = result.loginPath;
         } catch (error) {
             logToolAction('login', 'failed: ' + error.message);
@@ -507,14 +601,24 @@
         }
     }
 
-    function showOAuthReturnMessage() {
+    async function showOAuthReturnMessage() {
         const params = new URLSearchParams(window.location.search);
         let changed = false;
         if (params.get('oauth') === 'success') {
+            clearLoginErrorPanel();
             setActionBanner('OAuth login completed successfully using your wizard configuration.', 'success');
             setTestSuiteStatus('Login succeeded. You are signed in and can run logout or OIDC validation tests.', 'success');
             logToolAction('login', 'completed successfully');
             refreshAuthStatus();
+            testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (location.hash !== '#tests') {
+                location.hash = 'tests';
+            }
+            params.delete('oauth');
+            changed = true;
+        }
+        if (params.get('oauth') === 'error') {
+            await loadLastOAuthLoginError();
             testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (location.hash !== '#tests') {
                 location.hash = 'tests';
@@ -824,7 +928,7 @@
             }
             applyCatalog(data);
             await loadSavedWizardConfig();
-            showOAuthReturnMessage();
+            await showOAuthReturnMessage();
             await refreshAuthStatus();
             if (location.hash === '#diagnostics') {
                 runDiagnostics();

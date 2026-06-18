@@ -115,6 +115,15 @@
             </div>
 
             <p id="test-suite-status" class="action-status">Ready to run tests using your wizard configuration.</p>
+            <div id="login-error-panel" class="login-error-panel hidden" role="alert">
+                <h3>Login Error</h3>
+                <p id="login-error-summary" class="login-error-summary"></p>
+                <ul id="login-error-hints" class="login-error-hints"></ul>
+                <details>
+                    <summary>Technical details</summary>
+                    <pre id="login-error-technical" class="json-block login-error-technical"></pre>
+                </details>
+            </div>
             <div id="test-suite"></div>
         </section>
     </div>
