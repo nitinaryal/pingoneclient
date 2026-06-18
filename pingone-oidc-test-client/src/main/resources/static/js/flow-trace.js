@@ -7,6 +7,7 @@
     const refreshBtn = document.getElementById('btn-flow-trace-refresh');
 
     let lastEventCount = 0;
+    let lastMermaidSource = '';
     let pollTimer = null;
     let mermaidReady = false;
 
@@ -75,7 +76,14 @@
         return names[actor] || String(actor);
     }
 
-    function renderEventLog(events) {
+    function isLogNearBottom() {
+        if (!logEl) {
+            return false;
+        }
+        return logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight <= 48;
+    }
+
+    function renderEventLog(events, followTail) {
         if (!logEl) {
             return;
         }
@@ -83,6 +91,7 @@
             logEl.innerHTML = '<p class="flow-trace-empty">No flow events yet. Run login, logout, or connectivity checks to populate the trace.</p>';
             return;
         }
+        const stickToTail = followTail === true || isLogNearBottom();
         logEl.innerHTML = events.map(event => {
             const http = event.httpMethod && event.path
                 ? `<span class="flow-event-http">${escapeHtml(event.httpMethod)} ${escapeHtml(event.path)}${event.httpStatus != null ? ' → ' + event.httpStatus : ''}</span>`
@@ -98,8 +107,9 @@
                 ${http}
             </article>`;
         }).join('');
-        const latest = logEl.querySelector(`[data-sequence="${events[events.length - 1].sequence}"]`);
-        latest?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        if (stickToTail) {
+            logEl.scrollTop = logEl.scrollHeight;
+        }
     }
 
     async function ensureMermaid() {
@@ -139,22 +149,27 @@
         }
     }
 
-    function renderTrace(view) {
+    function renderTrace(view, options) {
         if (!view) {
             return;
         }
+        const opts = options || {};
         if (activeFlowEl) {
             activeFlowEl.textContent = view.activeFlowName || 'general';
         }
         const events = view.events || [];
+        const mermaidSource = view.mermaidSequence || '';
         if (events.length !== lastEventCount) {
             lastEventCount = events.length;
             setStatus(events.length
                 ? `${events.length} event(s) in current session trace`
                 : 'Waiting for login, logout, or API activity', events.length ? 'success' : '');
+            renderEventLog(events, opts.followTail);
         }
-        renderEventLog(events);
-        renderDiagram(view.mermaidSequence);
+        if (mermaidSource !== lastMermaidSource) {
+            lastMermaidSource = mermaidSource;
+            renderDiagram(mermaidSource);
+        }
     }
 
     async function fetchTrace() {
@@ -165,10 +180,10 @@
         return response.json();
     }
 
-    async function refreshTrace() {
+    async function refreshTrace(options) {
         try {
             const view = await fetchTrace();
-            renderTrace(view);
+            renderTrace(view, options);
             return view;
         } catch (error) {
             setStatus('Could not load flow trace: ' + error.message, 'error');
@@ -187,7 +202,8 @@
                 throw new Error('Clear failed with status ' + response.status);
             }
             lastEventCount = 0;
-            await refreshTrace();
+            lastMermaidSource = '';
+            await refreshTrace({ followTail: true });
             setStatus('Flow trace cleared', 'success');
         } catch (error) {
             setStatus('Could not clear flow trace: ' + error.message, 'error');
@@ -205,7 +221,7 @@
                 return;
             }
             const view = await response.json();
-            renderTrace(view);
+            renderTrace(view, { followTail: true });
         } catch (error) {
             console.warn('Failed to record client flow event', error);
         }
@@ -225,7 +241,7 @@
 
     function bindControls() {
         clearBtn?.addEventListener('click', clearTrace);
-        refreshBtn?.addEventListener('click', refreshTrace);
+        refreshBtn?.addEventListener('click', () => refreshTrace({ followTail: true }));
     }
 
     bindControls();
