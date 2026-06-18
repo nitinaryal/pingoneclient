@@ -2,6 +2,8 @@ package com.pingone.oidc.tool.oauth;
 
 import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.tool.model.ToolOAuthLoginError;
+import com.pingone.oidc.tool.trace.FlowActor;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,16 +24,19 @@ public class ToolOAuthAuthenticationFailureHandler extends SimpleUrlAuthenticati
     private final ToolSessionClientRegistrationStore sessionStore;
     private final ToolOAuthErrorMapper errorMapper;
     private final ToolOAuthLoginErrorStore loginErrorStore;
+    private final PingOneFlowTraceService flowTraceService;
 
     public ToolOAuthAuthenticationFailureHandler(
             PingOneClientProperties properties,
             ToolSessionClientRegistrationStore sessionStore,
             ToolOAuthErrorMapper errorMapper,
-            ToolOAuthLoginErrorStore loginErrorStore) {
+            ToolOAuthLoginErrorStore loginErrorStore,
+            PingOneFlowTraceService flowTraceService) {
         this.properties = properties;
         this.sessionStore = sessionStore;
         this.errorMapper = errorMapper;
         this.loginErrorStore = loginErrorStore;
+        this.flowTraceService = flowTraceService;
         setDefaultFailureUrl("/?login_error=1");
     }
 
@@ -40,6 +45,13 @@ public class ToolOAuthAuthenticationFailureHandler extends SimpleUrlAuthenticati
             HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
             throws IOException, ServletException {
         ToolOAuthLoginError error = errorMapper.mapCallback(exception);
+        flowTraceService.record(
+                "login",
+                FlowActor.PINGONE,
+                FlowActor.TEST_CLIENT,
+                "OAuth callback failed",
+                error.userMessage() + " (" + error.errorCode() + ")",
+                "error");
         log.warn(
                 "OAuth login failed during {}: {} - {}",
                 error.phase(),

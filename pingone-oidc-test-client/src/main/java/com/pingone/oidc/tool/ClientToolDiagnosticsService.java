@@ -2,6 +2,8 @@ package com.pingone.oidc.tool;
 
 import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.service.PingOneMetadataService;
+import com.pingone.oidc.tool.trace.FlowActor;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.core.env.Environment;
@@ -18,19 +20,30 @@ public class ClientToolDiagnosticsService {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final PingOneMetadataService metadataService;
     private final Environment environment;
+    private final PingOneFlowTraceService flowTraceService;
 
     public ClientToolDiagnosticsService(
             PingOneClientProperties properties,
             ClientRegistrationRepository clientRegistrationRepository,
             PingOneMetadataService metadataService,
-            Environment environment) {
+            Environment environment,
+            PingOneFlowTraceService flowTraceService) {
         this.properties = properties;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.metadataService = metadataService;
         this.environment = environment;
+        this.flowTraceService = flowTraceService;
     }
 
     public Map<String, Object> runtimeDiagnostics() {
+        flowTraceService.beginFlow("diagnostics");
+        flowTraceService.record(
+                "diagnostics",
+                FlowActor.BROWSER,
+                FlowActor.TEST_CLIENT,
+                "Run connectivity checks",
+                "Checking issuer metadata and JWKS against running configuration",
+                "info");
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("mockMode", isMockMode());
         result.put("applicationType", properties.getApplicationType().getConfigValue());
@@ -61,20 +74,43 @@ public class ClientToolDiagnosticsService {
             result.put("principal", authentication.getName());
         }
 
-        Map<String, Object> checks = new LinkedHashMap<>();
+        Map<String, Map<String, String>> checks = new LinkedHashMap<>();
         checks.put("metadata", runCheck(this::fetchMetadata));
         checks.put("jwks", runCheck(this::fetchJwks));
         result.put("connectivityChecks", checks);
+
+        boolean allPass = checks.values().stream().allMatch(check -> "PASS".equals(check.get("status")));
+        flowTraceService.record(
+                "diagnostics",
+                FlowActor.TEST_CLIENT,
+                FlowActor.PINGONE,
+                allPass ? "Connectivity checks passed" : "Connectivity checks failed",
+                "metadata=" + checks.get("metadata").get("status") + ", jwks=" + checks.get("jwks").get("status"),
+                allPass ? "success" : "error");
 
         return result;
     }
 
     private String fetchMetadata() {
+        flowTraceService.record(
+                "diagnostics",
+                FlowActor.TEST_CLIENT,
+                FlowActor.PINGONE,
+                "Fetch OIDC discovery",
+                "GET issuer metadata document",
+                "info");
         metadataService.fetchDiscoveryDocument();
         return "OK";
     }
 
     private String fetchJwks() {
+        flowTraceService.record(
+                "diagnostics",
+                FlowActor.TEST_CLIENT,
+                FlowActor.PINGONE,
+                "Fetch JWKS",
+                "GET JSON Web Key Set",
+                "info");
         metadataService.fetchJwks();
         return "OK";
     }

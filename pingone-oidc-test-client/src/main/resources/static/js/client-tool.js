@@ -57,6 +57,11 @@
 
     function logToolAction(action, detail) {
         console.info('[PingOne Client Tool]', action + ':', detail);
+        window.PingOneFlowTrace?.recordClientEvent(action, 'Browser: ' + action, detail, 'info');
+    }
+
+    function refreshFlowTrace() {
+        return window.PingOneFlowTrace?.refresh?.();
     }
 
     function setStatusElement(element, message, tone) {
@@ -154,6 +159,7 @@
             logToolAction('logout', result.message || 'submitting POST /logout');
             setActionBanner(result.message, 'pending');
             setTestSuiteStatus('Redirecting to PingOne end session endpoint...', 'pending');
+            await refreshFlowTrace();
             submitLogoutForm();
         } catch (error) {
             logToolAction('logout', 'failed: ' + error.message);
@@ -600,6 +606,7 @@
             logToolAction('login', result.message || ('redirecting to ' + result.loginPath));
             setActionBanner(result.message || 'Redirecting to PingOne authorization endpoint...', 'pending');
             setTestSuiteStatus('Redirecting to PingOne sign-in page...', 'pending');
+            await refreshFlowTrace();
             window.location.href = result.loginPath;
         } catch (error) {
             logToolAction('login', 'failed: ' + error.message);
@@ -636,6 +643,7 @@
             setTestSuiteStatus('Login succeeded. You are signed in and can run logout or OIDC validation tests.', 'success');
             logToolAction('login', 'completed successfully');
             refreshAuthStatus();
+            await refreshFlowTrace();
             await generateArtifactsAfterSuccessfulTest('login');
             if (location.hash !== '#tests') {
                 location.hash = 'tests';
@@ -657,6 +665,7 @@
             setTestSuiteStatus('Logout succeeded (same flow as dashboard). You are signed out.', 'success');
             logToolAction('logout', 'completed successfully');
             refreshAuthStatus();
+            await refreshFlowTrace();
             testsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             if (location.hash !== '#tests') {
                 location.hash = 'tests';
@@ -816,6 +825,7 @@
             setDiagnosticsStatus(summary, allPass ? 'success' : 'error');
             setActionBanner(summary, allPass ? 'success' : 'error');
             logToolAction('diagnostics', allPass ? 'all checks passed' : 'one or more checks failed');
+            await refreshFlowTrace();
             if (location.hash !== '#diagnostics') {
                 location.hash = 'diagnostics';
             }

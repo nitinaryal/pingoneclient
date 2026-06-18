@@ -1,6 +1,8 @@
 package com.pingone.oidc.tool.oauth;
 
 import com.pingone.oidc.config.properties.PingOneClientProperties;
+import com.pingone.oidc.tool.trace.FlowActor;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,12 +23,16 @@ public class ToolOAuthAuthenticationSuccessHandler extends SimpleUrlAuthenticati
 
     private final PingOneClientProperties properties;
     private final ToolSessionClientRegistrationStore sessionStore;
+    private final PingOneFlowTraceService flowTraceService;
     private final RequestCache requestCache = new HttpSessionRequestCache();
 
     public ToolOAuthAuthenticationSuccessHandler(
-            PingOneClientProperties properties, ToolSessionClientRegistrationStore sessionStore) {
+            PingOneClientProperties properties,
+            ToolSessionClientRegistrationStore sessionStore,
+            PingOneFlowTraceService flowTraceService) {
         this.properties = properties;
         this.sessionStore = sessionStore;
+        this.flowTraceService = flowTraceService;
         setAlwaysUseDefaultTargetUrl(true);
     }
 
@@ -39,8 +45,22 @@ public class ToolOAuthAuthenticationSuccessHandler extends SimpleUrlAuthenticati
             sessionStore.clearToolInitiatedLoginFlag(session);
             requestCache.removeRequest(request, response);
             setDefaultTargetUrl("/tool?oauth=success#tests");
+            flowTraceService.record(
+                    "login",
+                    FlowActor.PINGONE,
+                    FlowActor.TEST_CLIENT,
+                    "OAuth callback succeeded",
+                    "Authenticated principal " + authentication.getName() + " — redirecting to tool",
+                    "success");
             log.info("Tool OAuth login succeeded for principal '{}'", authentication.getName());
         } else {
+            flowTraceService.record(
+                    "login",
+                    FlowActor.PINGONE,
+                    FlowActor.TEST_CLIENT,
+                    "OAuth callback succeeded",
+                    "Authenticated principal " + authentication.getName(),
+                    "success");
             setDefaultTargetUrl(properties.getUi().getPostLoginPath());
             log.info("Application OAuth login succeeded for principal '{}'", authentication.getName());
         }

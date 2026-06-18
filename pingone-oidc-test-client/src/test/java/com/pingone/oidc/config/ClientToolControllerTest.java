@@ -137,4 +137,36 @@ class ClientToolControllerTest {
                 .andExpect(jsonPath("$.values.clientId").value("session-client"))
                 .andExpect(jsonPath("$.values.clientSecret").value("session-secret"));
     }
+
+    @Test
+    void flowTraceApiRecordsAndClearsEvents() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+
+        mockMvc.perform(get("/tool/api/flow/trace").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.events").isArray())
+                .andExpect(jsonPath("$.mermaidSequence").exists());
+
+        mockMvc.perform(post("/tool/api/flow/client-event")
+                        .with(csrf())
+                        .session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"flowName":"login","label":"Browser click","message":"User started login","level":"info"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.events.length()").value(1))
+                .andExpect(jsonPath("$.events[0].label").value("Browser click"))
+                .andExpect(jsonPath("$.activeFlowName").value("login"));
+
+        mockMvc.perform(post("/tool/api/flow/clear")
+                        .with(csrf())
+                        .session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.cleared").value(true));
+
+        mockMvc.perform(get("/tool/api/flow/trace").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.events.length()").value(0));
+    }
 }

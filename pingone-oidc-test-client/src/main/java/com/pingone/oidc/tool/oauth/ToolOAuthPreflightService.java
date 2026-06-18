@@ -2,6 +2,8 @@ package com.pingone.oidc.tool.oauth;
 
 import com.pingone.oidc.tool.model.ClientToolConfigRequest;
 import com.pingone.oidc.tool.model.ToolOAuthLoginError;
+import com.pingone.oidc.tool.trace.FlowActor;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
@@ -29,19 +31,38 @@ public class ToolOAuthPreflightService {
 
     private final ClientToolRegistrationFactory registrationFactory;
     private final ToolOAuthErrorMapper errorMapper;
+    private final PingOneFlowTraceService flowTraceService;
     private final WebClient webClient;
 
-    public ToolOAuthPreflightService(ClientToolRegistrationFactory registrationFactory, ToolOAuthErrorMapper errorMapper) {
+    public ToolOAuthPreflightService(
+            ClientToolRegistrationFactory registrationFactory,
+            ToolOAuthErrorMapper errorMapper,
+            PingOneFlowTraceService flowTraceService) {
         this.registrationFactory = registrationFactory;
         this.errorMapper = errorMapper;
+        this.flowTraceService = flowTraceService;
         HttpClient httpClient = HttpClient.create().followRedirect(false);
         this.webClient = WebClient.builder().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
     }
 
     public ToolOAuthLoginError validate(ClientToolConfigRequest request) {
         ClientRegistration registration = registrationFactory.build(request);
+        flowTraceService.record(
+                "login",
+                FlowActor.TEST_CLIENT,
+                FlowActor.PINGONE,
+                "Preflight authorization endpoint",
+                "Probing " + registration.getProviderDetails().getAuthorizationUri(),
+                "info");
         ToolOAuthLoginError authorizationError = probeAuthorizationEndpoint(registration);
         if (authorizationError != null) {
+            flowTraceService.record(
+                    "login",
+                    FlowActor.PINGONE,
+                    FlowActor.TEST_CLIENT,
+                    "Authorization preflight failed",
+                    authorizationError.userMessage(),
+                    "error");
             log.warn(
                     "Tool OAuth preflight authorization probe failed for client '{}': {}",
                     registration.getClientId(),
@@ -49,8 +70,22 @@ public class ToolOAuthPreflightService {
             return authorizationError;
         }
 
+        flowTraceService.record(
+                "login",
+                FlowActor.TEST_CLIENT,
+                FlowActor.PINGONE,
+                "Preflight token endpoint",
+                "Probing " + registration.getProviderDetails().getTokenUri(),
+                "info");
         ToolOAuthLoginError tokenError = probeTokenEndpoint(registration);
         if (tokenError != null) {
+            flowTraceService.record(
+                    "login",
+                    FlowActor.PINGONE,
+                    FlowActor.TEST_CLIENT,
+                    "Token preflight failed",
+                    tokenError.userMessage(),
+                    "error");
             log.warn(
                     "Tool OAuth preflight token probe failed for client '{}': {}",
                     registration.getClientId(),
@@ -59,6 +94,13 @@ public class ToolOAuthPreflightService {
         }
 
         log.info("Tool OAuth preflight passed for client '{}'", registration.getClientId());
+        flowTraceService.record(
+                "login",
+                FlowActor.PINGONE,
+                FlowActor.TEST_CLIENT,
+                "Preflight passed",
+                "Authorization and token endpoints accepted wizard client credentials",
+                "success");
         return null;
     }
 

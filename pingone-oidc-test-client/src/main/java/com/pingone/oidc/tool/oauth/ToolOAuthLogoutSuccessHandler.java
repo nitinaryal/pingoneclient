@@ -2,6 +2,8 @@ package com.pingone.oidc.tool.oauth;
 
 import com.pingone.oidc.config.properties.PingOneClientProperties;
 import com.pingone.oidc.tool.session.ToolWizardSessionStore;
+import com.pingone.oidc.tool.trace.FlowActor;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,14 +26,17 @@ public class ToolOAuthLogoutSuccessHandler implements LogoutSuccessHandler {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final PingOneClientProperties properties;
     private final ToolWizardSessionStore wizardSessionStore;
+    private final PingOneFlowTraceService flowTraceService;
 
     public ToolOAuthLogoutSuccessHandler(
             ClientRegistrationRepository clientRegistrationRepository,
             PingOneClientProperties properties,
-            ToolWizardSessionStore wizardSessionStore) {
+            ToolWizardSessionStore wizardSessionStore,
+            PingOneFlowTraceService flowTraceService) {
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.properties = properties;
         this.wizardSessionStore = wizardSessionStore;
+        this.flowTraceService = flowTraceService;
     }
 
     @Override
@@ -47,8 +52,22 @@ public class ToolOAuthLogoutSuccessHandler implements LogoutSuccessHandler {
                     .queryParam("logout", "success")
                     .build()
                     .toUriString();
+            flowTraceService.record(
+                    "logout",
+                    FlowActor.TEST_CLIENT,
+                    FlowActor.PINGONE,
+                    "Redirect to PingOne end session",
+                    "Post-logout redirect " + postLogoutRedirectUri,
+                    "info");
             log.info("Tool-initiated logout: redirecting to PingOne end session, then {}", postLogoutRedirectUri);
         } else {
+            flowTraceService.record(
+                    "logout",
+                    FlowActor.TEST_CLIENT,
+                    FlowActor.PINGONE,
+                    "Redirect to PingOne end session",
+                    "Post-logout redirect " + postLogoutRedirectUri,
+                    "info");
             log.info("Application logout: redirecting to PingOne end session, then {}", postLogoutRedirectUri);
         }
 

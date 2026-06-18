@@ -557,6 +557,118 @@ code {
     min-height: 120px;
 }
 
+.flow-trace-meta {
+    margin: 0.35rem 0 0.75rem;
+    font-size: 0.9rem;
+    color: var(--muted, #5c6570);
+}
+
+.flow-trace-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.flow-trace-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 960px) {
+    .flow-trace-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.flow-trace-diagram-panel,
+.flow-trace-log-panel {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: #fafbfc;
+}
+
+.flow-trace-diagram-panel h3,
+.flow-trace-log-panel h3 {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+}
+
+.flow-trace-diagram {
+    min-height: 220px;
+    overflow: auto;
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.flow-trace-log {
+    max-height: 360px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.flow-trace-empty {
+    color: var(--muted, #5c6570);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.flow-event {
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    background: #fff;
+    font-size: 0.88rem;
+}
+
+.flow-event header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    color: var(--muted, #5c6570);
+    font-size: 0.8rem;
+}
+
+.flow-event-label {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.flow-event-message {
+    margin: 0;
+    color: #2f3640;
+}
+
+.flow-event-http {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: #4a5568;
+}
+
+.flow-event-info {
+    border-left-color: #3b82f6;
+}
+
+.flow-event-success {
+    border-left-color: #16a34a;
+}
+
+.flow-event-warn {
+    border-left-color: #d97706;
+}
+
+.flow-event-error {
+    border-left-color: #dc2626;
+}
+
 .test-card {
     border: 1px solid var(--border);
     border-radius: 10px;

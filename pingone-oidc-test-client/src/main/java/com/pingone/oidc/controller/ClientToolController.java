@@ -15,6 +15,9 @@ import com.pingone.oidc.tool.model.GeneratedAdoptionArtifacts;
 import com.pingone.oidc.tool.model.TestFlowDefinition;
 import com.pingone.oidc.tool.model.ToolWizardSessionView;
 import com.pingone.oidc.tool.oauth.ToolOAuthService;
+import com.pingone.oidc.tool.trace.FlowClientEventRequest;
+import com.pingone.oidc.tool.trace.FlowTraceView;
+import com.pingone.oidc.tool.trace.PingOneFlowTraceService;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,7 @@ public class ClientToolController {
     private final ToolCatalogEmbedService catalogEmbedService;
     private final ToolOAuthService toolOAuthService;
     private final ToolWizardConfigService wizardConfigService;
+    private final PingOneFlowTraceService flowTraceService;
 
     public ClientToolController(
             PingOneApplicationTypeCatalog catalog,
@@ -51,7 +55,8 @@ public class ClientToolController {
             PingOneClientProperties runtimeProperties,
             ToolCatalogEmbedService catalogEmbedService,
             ToolOAuthService toolOAuthService,
-            ToolWizardConfigService wizardConfigService) {
+            ToolWizardConfigService wizardConfigService,
+            PingOneFlowTraceService flowTraceService) {
         this.catalog = catalog;
         this.snippetService = snippetService;
         this.integrationRegistry = integrationRegistry;
@@ -60,6 +65,7 @@ public class ClientToolController {
         this.catalogEmbedService = catalogEmbedService;
         this.toolOAuthService = toolOAuthService;
         this.wizardConfigService = wizardConfigService;
+        this.flowTraceService = flowTraceService;
     }
 
     @GetMapping("/tool")
@@ -100,6 +106,26 @@ public class ClientToolController {
     @ResponseBody
     public Map<String, Object> diagnostics() {
         return diagnosticsService.runtimeDiagnostics();
+    }
+
+    @GetMapping(value = "/tool/api/flow/trace", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public FlowTraceView flowTrace() {
+        return flowTraceService.currentView();
+    }
+
+    @PostMapping(value = "/tool/api/flow/clear", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public Map<String, Object> clearFlowTrace() {
+        flowTraceService.clear();
+        return Map.of("cleared", true);
+    }
+
+    @PostMapping(value = "/tool/api/flow/client-event", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public FlowTraceView recordFlowClientEvent(@RequestBody FlowClientEventRequest request) {
+        flowTraceService.recordClientEvent(request);
+        return flowTraceService.currentView();
     }
 
     @PostMapping(value = "/tool/api/generate", produces = MediaType.APPLICATION_JSON_VALUE)
