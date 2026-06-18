@@ -4,6 +4,29 @@ spring:
       on-property:
         name: mock
         value: "true"
+  security:
+    oauth2:
+      client:
+        registration:
+          pingone:
+            client-id: mock-client-id
+            client-secret: mock-client-secret
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: authorization_code
+            redirect-uri: http://localhost:${server.port:8080}/login/oauth2/code/pingone
+            scope:
+              - openid
+              - profile
+              - email
+            provider: pingone
+        provider:
+          pingone:
+            # Explicit endpoints only — avoids OIDC discovery fetch at startup in mock mode.
+            authorization-uri: http://localhost:${server.port:8080}/mock/pingone/as/authorize
+            token-uri: http://localhost:${server.port:8080}/mock/pingone/as/token
+            user-info-uri: http://localhost:${server.port:8080}/mock/pingone/as/userinfo
+            jwk-set-uri: http://localhost:${server.port:8080}/mock/pingone/as/jwks
+            user-name-attribute: sub
 
 pingone:
   security:
@@ -11,8 +34,10 @@ pingone:
       - /
       - /tool
       - /tool/**
+      - /worker/**
       - /mock/**
       - /error
       - /css/**
       - /js/**
       - /webjars/**
+    post-logout-redirect-uri: http://localhost:${server.port:8080}/

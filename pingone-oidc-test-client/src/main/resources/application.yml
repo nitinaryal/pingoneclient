@@ -16,7 +16,7 @@ spring:
             client-secret: ${PINGONE_CLIENT_SECRET:change-me}
             client-authentication-method: ${PINGONE_CLIENT_AUTH_METHOD:client_secret_basic}
             authorization-grant-type: ${PINGONE_GRANT_TYPE:authorization_code}
-            redirect-uri: ${PINGONE_REDIRECT_URI:http://localhost:8080/login/oauth2/code/pingone}
+            redirect-uri: http://localhost:${server.port:8080}/login/oauth2/code/${PINGONE_REGISTRATION_ID:pingone}
             scope:
               - openid
               - profile
@@ -24,14 +24,15 @@ spring:
             provider: ${PINGONE_PROVIDER_ID:pingone}
         provider:
           # Key must match pingone.provider-id
-          pingone:
-            issuer-uri: ${PINGONE_ISSUER_URI:https://auth.pingone.com/{environment-id}/as}
-            # Option B: comment issuer-uri and set explicit endpoints instead.
-            # authorization-uri: ${PINGONE_AUTHORIZATION_URI:}
-            # token-uri: ${PINGONE_TOKEN_URI:}
-            # user-info-uri: ${PINGONE_USERINFO_URI:}
-            # jwk-set-uri: ${PINGONE_JWKS_URI:}
-            user-name-attribute: ${PINGONE_USER_NAME_ATTRIBUTE:sub}
+          # Set PINGONE_ISSUER_URI to your real PingOne issuer, e.g. https://auth.pingone.com/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/as
+          # Do not use documentation placeholders like {environment-id} — Spring treats braces as URI template variables.
+          issuer-uri: ${PINGONE_ISSUER_URI:}
+          # Option B: leave issuer-uri empty and set explicit endpoints instead.
+          # authorization-uri: ${PINGONE_AUTHORIZATION_URI:}
+          # token-uri: ${PINGONE_TOKEN_URI:}
+          # user-info-uri: ${PINGONE_USERINFO_URI:}
+          # jwk-set-uri: ${PINGONE_JWKS_URI:}
+          user-name-attribute: ${PINGONE_USER_NAME_ATTRIBUTE:sub}
 
 pingone:
   # Supported now: oidc-web-app
@@ -52,7 +53,7 @@ pingone:
       - /css/**
       - /js/**
       - /webjars/**
-    post-logout-redirect-uri: ${PINGONE_POST_LOGOUT_REDIRECT_URI:http://localhost:8080/}
+    post-logout-redirect-uri: http://localhost:${server.port:8080}/
   metadata:
     jwks-uri-override: ${PINGONE_JWKS_URI_OVERRIDE:}
     discovery-document-path: ${PINGONE_DISCOVERY_PATH:/.well-known/openid-configuration}
