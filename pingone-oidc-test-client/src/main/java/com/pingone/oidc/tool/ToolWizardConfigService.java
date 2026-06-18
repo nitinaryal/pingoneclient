@@ -18,16 +18,19 @@ public class ToolWizardConfigService {
 
     private final OidcDiscoveryImportService discoveryImportService;
     private final ToolRuntimeDefaultsService runtimeDefaultsService;
+    private final ToolRuntimeModeSupport runtimeModeSupport;
     private final ToolWizardSessionStore wizardSessionStore;
     private final PingOneClientProperties properties;
 
     public ToolWizardConfigService(
             OidcDiscoveryImportService discoveryImportService,
             ToolRuntimeDefaultsService runtimeDefaultsService,
+            ToolRuntimeModeSupport runtimeModeSupport,
             ToolWizardSessionStore wizardSessionStore,
             PingOneClientProperties properties) {
         this.discoveryImportService = discoveryImportService;
         this.runtimeDefaultsService = runtimeDefaultsService;
+        this.runtimeModeSupport = runtimeModeSupport;
         this.wizardSessionStore = wizardSessionStore;
         this.properties = properties;
     }
@@ -59,8 +62,19 @@ public class ToolWizardConfigService {
     public ToolWizardSessionView loadSession() {
         return wizardSessionStore
                 .load()
-                .map(request -> toView(request, true))
+                .map(this::toCompatibleView)
                 .orElseGet(() -> new ToolWizardSessionView(false, null, Map.of(), List.of()));
+    }
+
+    private ToolWizardSessionView toCompatibleView(ClientToolConfigRequest request) {
+        if (runtimeModeSupport.isIncompatibleWithCurrentRuntime(request.getValues())) {
+            wizardSessionStore.clear();
+            String notice = runtimeModeSupport.isMockMode()
+                    ? "Previous real PingOne wizard settings were cleared because the app is now running in mock mode. Use Load Current Runtime Config or enter mock values."
+                    : "Previous mock-mode wizard settings were cleared because the app is not running in mock mode. Enter your real PingOne Client ID and Issuer URI.";
+            return new ToolWizardSessionView(false, null, Map.of(), List.of(), notice);
+        }
+        return toView(request, true);
     }
 
     public Map<String, String> runtimeDefaults() {

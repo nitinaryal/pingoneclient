@@ -387,18 +387,20 @@
             return;
         }
         const data = await response.json();
-        if (!data.saved) {
-            return;
+        if (data.saved) {
+            if (data.applicationType) {
+                selectedType = catalog.find(t => t.configValue === data.applicationType) || selectedType;
+            }
+            renderAll();
+            applyFormValues(data.values);
+            setArtifactsStatus(
+                'Restored wizard configuration from encrypted server session. Tests will reuse these values.',
+                'success'
+            );
+        } else if (data.notice) {
+            setArtifactsStatus(data.notice, 'pending');
+            setActionBanner(data.notice, 'info');
         }
-        if (data.applicationType) {
-            selectedType = catalog.find(t => t.configValue === data.applicationType) || selectedType;
-        }
-        renderAll();
-        applyFormValues(data.values);
-        setArtifactsStatus(
-            'Restored wizard configuration from encrypted server session. Tests will reuse these values.',
-            'success'
-        );
     }
 
     async function applyDiscoveryJson() {

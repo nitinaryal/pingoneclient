@@ -2,20 +2,63 @@
 
 Reusable Spring Boot template for validating PingOne integrations. **OIDC Web App** is fully implemented; other PingOne application types are supported via configuration hooks for future extension.
 
+## How to run
+
+Run from the **repository root** (`pingone/`). Use **`-pl pingone-oidc-test-client -am`** so the `pingone-oidc-spring-boot-starter` module is built in the same reactor (no `mvn install` required).
+
+### Mock mode (local PingOne emulator — no tenant required)
+
+```powershell
+mvn spring-boot:run -pl pingone-oidc-test-client -am -Dmock=true
+```
+
+Or use the helper script:
+
+```powershell
+.\run.ps1
+```
+
+Then open **http://localhost:8080/tool** (or the port set in `application.yml`).
+
+### Real PingOne (no mock)
+
+Set your PingOne settings first, then start the app:
+
+```powershell
+$env:PINGONE_ISSUER_URI = "https://auth.pingone.com/<your-env-uuid>/as"
+$env:PINGONE_CLIENT_ID = "your-client-id"
+$env:PINGONE_CLIENT_SECRET = "your-client-secret"
+mvn spring-boot:run -pl pingone-oidc-test-client -am
+```
+
+Or:
+
+```powershell
+.\run-real.ps1
+```
+
+| Flag / script | Purpose |
+|---------------|---------|
+| `-pl pingone-oidc-test-client` | Run the test client application module |
+| `-am` | Also build `pingone-oidc-spring-boot-starter` |
+| `-Dmock=true` | Enable built-in mock PingOne (`/mock/pingone/as`) |
+| `.\run.ps1` | Same as mock command above |
+| `.\run-real.ps1` | Real PingOne (requires env vars above) |
+
+**Do not** run `mvn spring-boot:run` from the root without `-pl pingone-oidc-test-client -am` — the parent POM has no main class.
+
+---
+
 ## Quick start (configuration only)
 
 1. Copy this project (or use as a Git template).
 2. Set PingOne values in `application.yml` or environment variables.
 3. Register matching redirect and post-logout URIs in PingOne Admin.
-4. Run: `mvn spring-boot:run`
+4. Run using [How to run](#how-to-run) above.
 
 ### Local mock mode (no PingOne tenant required)
 
-Run with a built-in mock OIDC provider instead of real PingOne:
-
-```bash
-mvn spring-boot:run -Dmock=true
-```
+See [How to run — Mock mode](#mock-mode-local-pingone-emulator--no-tenant-required).
 
 | Setting | Mock value |
 |---------|------------|

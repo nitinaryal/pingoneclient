@@ -7,4 +7,11 @@ public record ToolWizardSessionView(
         boolean saved,
         String applicationType,
         Map<String, String> values,
-        List<String> sensitiveFields) {}
+        List<String> sensitiveFields,
+        String notice) {
+
+    public ToolWizardSessionView(
+            boolean saved, String applicationType, Map<String, String> values, List<String> sensitiveFields) {
+        this(saved, applicationType, values, sensitiveFields, null);
+    }
+}

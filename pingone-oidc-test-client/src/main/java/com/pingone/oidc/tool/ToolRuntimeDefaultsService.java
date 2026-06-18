@@ -16,14 +16,17 @@ public class ToolRuntimeDefaultsService {
     private final PingOneClientProperties properties;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final Environment environment;
+    private final ToolRuntimeModeSupport runtimeModeSupport;
 
     public ToolRuntimeDefaultsService(
             PingOneClientProperties properties,
             ClientRegistrationRepository clientRegistrationRepository,
-            Environment environment) {
+            Environment environment,
+            ToolRuntimeModeSupport runtimeModeSupport) {
         this.properties = properties;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.environment = environment;
+        this.runtimeModeSupport = runtimeModeSupport;
     }
 
     public Map<String, String> wizardDefaults() {
@@ -58,11 +61,11 @@ public class ToolRuntimeDefaultsService {
                 "postLogoutRedirectUri",
                 environment.getProperty("PINGONE_POST_LOGOUT_REDIRECT_URI"));
 
-        if (isMockMode()) {
+        if (runtimeModeSupport.isMockMode()) {
             PingOneClientProperties.Mock mock = properties.getMock();
             putIfHasText(values, "clientId", mock.getClientId());
             putIfHasText(values, "clientSecret", mock.getClientSecret());
-            int port = environment.getProperty("server.port", Integer.class, 8081);
+            int port = environment.getProperty("server.port", Integer.class, 8080);
             String issuer = "http://localhost:" + port + mock.getBasePath();
             putIfBlank(values, "issuerUri", issuer);
             putIfBlank(values, "authorizationUri", issuer + "/authorize");
@@ -85,10 +88,6 @@ public class ToolRuntimeDefaultsService {
         return values.entrySet().stream()
                 .filter(entry -> StringUtils.hasText(entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> b, LinkedHashMap::new));
-    }
-
-    private boolean isMockMode() {
-        return environment.getProperty("mock", Boolean.class, false);
     }
 
     private static void putIfHasText(Map<String, String> values, String key, String value) {
