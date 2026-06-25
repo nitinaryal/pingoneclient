@@ -1,65 +1,98 @@
 {
-  "flowName": "Simple Login Flow",
-  "description": "A baseline flow to capture credentials and authenticate a user.",
-  "status": "enabled",
-  "settings": {
-    "inputType": "any",
-    "outputType": "any"
-  },
-  "nodes": [
-    {
-      "id": "start-node",
-      "type": "trigger",
-      "name": "Start",
-      "properties": {}
-    },
-    {
-      "id": "login-ui-node",
-      "type": "ui",
-      "name": "Sign-In Form",
-      "connectorId": "httpConnector",
-      "capability": "customHtmlMessage",
-      "properties": {
-        "html": "<form id='loginForm'>\n  <input type='text' name='username' placeholder='Username' required />\n  <input type='password' name='password' placeholder='Password' required />\n  <button type='submit'>Sign In</button>\n</form>"
-      }
-    },
-    {
-      "id": "pingone-auth-node",
-      "type": "connector",
-      "name": "PingOne Sign On",
-      "connectorId": "pingOneAuthenticationConnector",
-      "capability": "signInUser",
-      "properties": {
-        "username": "{{nodes.login-ui-node.output.username}}",
-        "password": "{{nodes.login-ui-node.output.password}}"
-      }
-    },
-    {
-      "id": "success-node",
-      "type": "connector",
-      "name": "Return Success",
-      "connectorId": "httpConnector",
-      "capability": "customHtmlMessage",
-      "properties": {
-        "html": "<h3>Authentication Successful!</h3>"
+  "name": "Simple Login Flow",
+  "description": "Baseline template to capture credentials and verify user authenticity.",
+  "skb": {
+    "flowId": "simple-login-demo-template",
+    "name": "Simple Login Flow",
+    "description": "Baseline template to capture credentials and verify user authenticity.",
+    "customerId": "global-template-id",
+    "connectorIds": [
+      "httpConnector",
+      "pingOneAuthenticationConnector"
+    ],
+    "graphData": {
+      "elements": {
+        "nodes": [
+          {
+            "data": {
+              "id": "start-node",
+              "nodeType": "trigger",
+              "name": "Start",
+              "connectorId": "httpConnector",
+              "capabilityName": "trigger"
+            },
+            "position": { "x": 100, "y": 200 }
+          },
+          {
+            "data": {
+              "id": "login-ui-node",
+              "nodeType": "connection",
+              "name": "Sign-In Form",
+              "connectorId": "httpConnector",
+              "capabilityName": "customHtmlMessage",
+              "properties": {
+                "html": {
+                  "value": "<form id=\"loginForm\">\n  <div style=\"margin-bottom:15px;\">\n    <input type=\"text\" name=\"username\" placeholder=\"Username\" required style=\"padding:10px; width:100%;\" />\n  </div>\n  <div style=\"margin-bottom:15px;\">\n    <input type=\"password\" name=\"password\" placeholder=\"Password\" required style=\"padding:10px; width:100%;\" />\n  </div>\n  <button type=\"submit\" style=\"padding:10px 20px; background:#0076D6; color:#fff; border:none; cursor:pointer;\">Sign In</button>\n</form>"
+                }
+              }
+            },
+            "position": { "x": 350, "y": 200 }
+          },
+          {
+            "data": {
+              "id": "pingone-auth-node",
+              "nodeType": "connection",
+              "name": "PingOne Sign On",
+              "connectorId": "pingOneAuthenticationConnector",
+              "capabilityName": "signInUser",
+              "properties": {
+                "username": { "value": "{{nodes.login-ui-node.output.username}}" },
+                "password": { "value": "{{nodes.login-ui-node.output.password}}" }
+              }
+            },
+            "position": { "x": 600, "y": 200 }
+          },
+          {
+            "data": {
+              "id": "success-node",
+              "nodeType": "connection",
+              "name": "Success Screen",
+              "connectorId": "httpConnector",
+              "capabilityName": "customHtmlMessage",
+              "properties": {
+                "html": { "value": "<h3>Authentication Successful!</h3><p>Welcome back, {{nodes.pingone-auth-node.output.user.username}}.</p>" }
+              }
+            },
+            "position": { "x": 850, "y": 200 }
+          }
+        ],
+        "edges": [
+          {
+            "data": {
+              "id": "edge-1",
+              "source": "start-node",
+              "target": "login-ui-node",
+              "interactionId": "success"
+            }
+          },
+          {
+            "data": {
+              "id": "edge-2",
+              "source": "login-ui-node",
+              "target": "pingone-auth-node",
+              "interactionId": "submit"
+            }
+          },
+          {
+            "data": {
+              "id": "edge-3",
+              "source": "pingone-auth-node",
+              "target": "success-node",
+              "interactionId": "success"
+            }
+          }
+        ]
       }
     }
-  ],
-  "connections": [
-    {
-      "from": "start-node",
-      "to": "login-ui-node",
-      "type": "success"
-    },
-    {
-      "from": "login-ui-node",
-      "to": "pingone-auth-node",
-      "type": "success"
-    },
-    {
-      "from": "pingone-auth-node",
-      "to": "success-node",
-      "type": "success"
-    }
-  ]
+  }
 }
