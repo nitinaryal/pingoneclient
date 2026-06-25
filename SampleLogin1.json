@@ -1,0 +1,65 @@
+{
+  "flowName": "Simple Login Flow",
+  "description": "A baseline flow to capture credentials and authenticate a user.",
+  "status": "enabled",
+  "settings": {
+    "inputType": "any",
+    "outputType": "any"
+  },
+  "nodes": [
+    {
+      "id": "start-node",
+      "type": "trigger",
+      "name": "Start",
+      "properties": {}
+    },
+    {
+      "id": "login-ui-node",
+      "type": "ui",
+      "name": "Sign-In Form",
+      "connectorId": "httpConnector",
+      "capability": "customHtmlMessage",
+      "properties": {
+        "html": "<form id='loginForm'>\n  <input type='text' name='username' placeholder='Username' required />\n  <input type='password' name='password' placeholder='Password' required />\n  <button type='submit'>Sign In</button>\n</form>"
+      }
+    },
+    {
+      "id": "pingone-auth-node",
+      "type": "connector",
+      "name": "PingOne Sign On",
+      "connectorId": "pingOneAuthenticationConnector",
+      "capability": "signInUser",
+      "properties": {
+        "username": "{{nodes.login-ui-node.output.username}}",
+        "password": "{{nodes.login-ui-node.output.password}}"
+      }
+    },
+    {
+      "id": "success-node",
+      "type": "connector",
+      "name": "Return Success",
+      "connectorId": "httpConnector",
+      "capability": "customHtmlMessage",
+      "properties": {
+        "html": "<h3>Authentication Successful!</h3>"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "from": "start-node",
+      "to": "login-ui-node",
+      "type": "success"
+    },
+    {
+      "from": "login-ui-node",
+      "to": "pingone-auth-node",
+      "type": "success"
+    },
+    {
+      "from": "pingone-auth-node",
+      "to": "success-node",
+      "type": "success"
+    }
+  ]
+}
