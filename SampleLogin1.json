@@ -4,7 +4,6 @@
     
     <!-- Company Logo Container -->
     <div style="text-align: center; margin-bottom: 24px;">
-      <!-- REPLACE THE SRC URL BELOW WITH YOUR ACTUAL HOSTE COMPANY LOGO LINK -->
       <img src="https://picsum.photos/id/122/160/50" alt="Company Logo" style="max-height: 50px; max-width: 160px; object-fit: contain;" />
     </div>
 
@@ -13,25 +12,37 @@
     <p style="font-size: 14px; color: #64748b; margin: 0 0 28px 0; text-align: center;">Please enter your account details below.</p>
 
     <!-- Login Form -->
-    <form style="margin: 0;">
+    <form id="davinciLoginForm" style="margin: 0;">
       
       <!-- Username Field -->
       <div style="margin-bottom: 20px;">
-        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Username</label>
-        <input type="text" name="username" placeholder="name@company.com" required 
-               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
+        <label for="usernameField" style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Username</label>
+        <input type="text" 
+               id="usernameField" 
+               name="username" 
+               autocomplete="username"
+               placeholder="name@company.com" 
+               required 
+               aria-required="true"
+               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none;" />
       </div>
 
       <!-- Password Field -->
       <div style="margin-bottom: 24px;">
-        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Password</label>
-        <input type="password" name="password" placeholder="••••••••" required 
-               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
+        <label for="passwordField" style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Password</label>
+        <input type="password" 
+               id="passwordField" 
+               name="password" 
+               autocomplete="current-password"
+               placeholder="••••••••" 
+               required 
+               aria-required="true"
+               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none;" />
       </div>
 
       <!-- Action Button -->
       <button type="submit" 
-              style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600; color: #ffffff; background-color: #0076D6; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+              style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600; color: #ffffff; background-color: #0076D6; border: none; border-radius: 6px; cursor: pointer;">
         Sign In
       </button>
 
