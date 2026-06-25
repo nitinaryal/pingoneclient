@@ -1,98 +1,40 @@
-{
-  "name": "Simple Login Flow",
-  "description": "Baseline template to capture credentials and verify user authenticity.",
-  "skb": {
-    "flowId": "simple-login-demo-template",
-    "name": "Simple Login Flow",
-    "description": "Baseline template to capture credentials and verify user authenticity.",
-    "customerId": "global-template-id",
-    "connectorIds": [
-      "httpConnector",
-      "pingOneAuthenticationConnector"
-    ],
-    "graphData": {
-      "elements": {
-        "nodes": [
-          {
-            "data": {
-              "id": "start-node",
-              "nodeType": "trigger",
-              "name": "Start",
-              "connectorId": "httpConnector",
-              "capabilityName": "trigger"
-            },
-            "position": { "x": 100, "y": 200 }
-          },
-          {
-            "data": {
-              "id": "login-ui-node",
-              "nodeType": "connection",
-              "name": "Sign-In Form",
-              "connectorId": "httpConnector",
-              "capabilityName": "customHtmlMessage",
-              "properties": {
-                "html": {
-                  "value": "<form id=\"loginForm\">\n  <div style=\"margin-bottom:15px;\">\n    <input type=\"text\" name=\"username\" placeholder=\"Username\" required style=\"padding:10px; width:100%;\" />\n  </div>\n  <div style=\"margin-bottom:15px;\">\n    <input type=\"password\" name=\"password\" placeholder=\"Password\" required style=\"padding:10px; width:100%;\" />\n  </div>\n  <button type=\"submit\" style=\"padding:10px 20px; background:#0076D6; color:#fff; border:none; cursor:pointer;\">Sign In</button>\n</form>"
-                }
-              }
-            },
-            "position": { "x": 350, "y": 200 }
-          },
-          {
-            "data": {
-              "id": "pingone-auth-node",
-              "nodeType": "connection",
-              "name": "PingOne Sign On",
-              "connectorId": "pingOneAuthenticationConnector",
-              "capabilityName": "signInUser",
-              "properties": {
-                "username": { "value": "{{nodes.login-ui-node.output.username}}" },
-                "password": { "value": "{{nodes.login-ui-node.output.password}}" }
-              }
-            },
-            "position": { "x": 600, "y": 200 }
-          },
-          {
-            "data": {
-              "id": "success-node",
-              "nodeType": "connection",
-              "name": "Success Screen",
-              "connectorId": "httpConnector",
-              "capabilityName": "customHtmlMessage",
-              "properties": {
-                "html": { "value": "<h3>Authentication Successful!</h3><p>Welcome back, {{nodes.pingone-auth-node.output.user.username}}.</p>" }
-              }
-            },
-            "position": { "x": 850, "y": 200 }
-          }
-        ],
-        "edges": [
-          {
-            "data": {
-              "id": "edge-1",
-              "source": "start-node",
-              "target": "login-ui-node",
-              "interactionId": "success"
-            }
-          },
-          {
-            "data": {
-              "id": "edge-2",
-              "source": "login-ui-node",
-              "target": "pingone-auth-node",
-              "interactionId": "submit"
-            }
-          },
-          {
-            "data": {
-              "id": "edge-3",
-              "source": "pingone-auth-node",
-              "target": "success-node",
-              "interactionId": "success"
-            }
-          }
-        ]
-      }
-    }
-  }
-}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
+  
+  <div style="background: #ffffff; border: 1px solid #e1e4e8; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); width: 100%; max-width: 400px; padding: 40px; box-sizing: border-box;">
+    
+    <!-- Company Logo Container -->
+    <div style="text-align: center; margin-bottom: 24px;">
+      <!-- REPLACE THE SRC URL BELOW WITH YOUR ACTUAL HOSTE COMPANY LOGO LINK -->
+      <img src="https://picsum.photos/id/122/160/50" alt="Company Logo" style="max-height: 50px; max-width: 160px; object-fit: contain;" />
+    </div>
+
+    <!-- Login Title -->
+    <h2 style="font-size: 24px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0; text-align: center;">Sign In</h2>
+    <p style="font-size: 14px; color: #64748b; margin: 0 0 28px 0; text-align: center;">Please enter your account details below.</p>
+
+    <!-- Login Form -->
+    <form style="margin: 0;">
+      
+      <!-- Username Field -->
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Username</label>
+        <input type="text" name="username" placeholder="name@company.com" required 
+               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
+      </div>
+
+      <!-- Password Field -->
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; font-size: 14px; font-weight: 500; color: #475569; margin-bottom: 6px;">Password</label>
+        <input type="password" name="password" placeholder="••••••••" required 
+               style="width: 100%; padding: 10px 12px; font-size: 15px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; outline: none; transition: border-color 0.2s;" />
+      </div>
+
+      <!-- Action Button -->
+      <button type="submit" 
+              style="width: 100%; padding: 12px; font-size: 15px; font-weight: 600; color: #ffffff; background-color: #0076D6; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s;">
+        Sign In
+      </button>
+
+    </form>
+  </div>
+</div>
