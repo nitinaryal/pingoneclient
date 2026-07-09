@@ -224,3 +224,10 @@ mvn test
 - Java 21, Spring Boot 4.0.6
 - Spring Security OAuth2 Client
 - Thymeleaf, WebClient
+
+
+
+===============================================================================
+Sample usecase
+
+1.1. Capture Credentials:Login Form.The user enters their username and password into your custom HTML template and clicks submit.2.2. Identity Lookup:PingOne Read User.The engine checks the PingOne directory. If a system failure happens, it immediately diverts to your centralized "System Error" screen.3.3. Evaluate Existence:Functions / Branching.The flow splits based on the directory results.4.4. Terminal Action (Found):Success Return.If found, the flow terminates using a Return Success Response node, passing the user data to your application and logging them in.5.5. Remediation Action (Not Found):Loop Back.If not found, the user sees an alert screen and clicks "Try Again," which loops them cleanly back to Step 1 without breaking the browser session.

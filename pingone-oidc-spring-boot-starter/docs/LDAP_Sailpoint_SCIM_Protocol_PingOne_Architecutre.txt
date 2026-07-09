@@ -1,0 +1,32 @@
++-----------------------------+
+                    |      Active Directory       |
+                    |      (Source of Truth)      |
+                    +-----------------------------+
+                                   │
+                                   │ LDAP/LDAPS
+                                   ▼
+                    +-----------------------------+
+                    |          SailPoint          |
+                    |                             |
+                    | • AD Connector / Aggregation|
+                    | • Attribute & Group Mapping |
+                    | • SCIM Client Engine        |
+                    +-----------------------------+
+                                   │
+                    ┌──────────────┴──────────────┐
+  1. Request Token  │                             │ 2. SCIM REST Requests
+ (Client Creds)     ▼                             ▼ (with Bearer Token)
+            +-----------------------------+ +-----------------------------+
+            |    PingOne Authorization    | |      PingOne SCIM API       |
+            |     Worker Application      | |                             |
+            +-----------------------------+ | • Validate Token & Schema   |
+                                            | • Process Users & Groups    |
+                                            +-----------------------------+
+                                                          │
+                                                          ▼
+                                            +-----------------------------+
+                                            |     PingOne Environment     |
+                                            |                             |
+                                            | • Population / Users        |
+                                            | • Groups & Custom Schemas   |
+                                            +-----------------------------+

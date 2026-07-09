@@ -1,0 +1,300 @@
+{
+  "name": "Simple Login Verification",
+  "description": "Minimal PingOne DaVinci username/password sign-on flow for OIDC login verification. After import: configure connector connections (HTTP, Authentication, PingOne Authentication), deploy the flow, add it to a DaVinci flow policy, and assign that policy to your PingOne OIDC application.",
+  "flowId": "a7f3e9c2b1d0486f9e2a5c7b8d4e1f03",
+  "flowColor": "#AFD5FF",
+  "connectorIds": [
+    "httpConnector",
+    "authenticationConnector",
+    "pingOneAuthenticationConnector",
+    "errorConnector",
+    "nodeConnector"
+  ],
+  "trigger": {
+    "type": "AUTHENTICATION"
+  },
+  "settings": {
+    "csp": "worker-src 'self' blob:; script-src 'self' https://cdn.jsdelivr.net https://code.jquery.com https://devsdk.singularkey.com http://cdnjs.cloudflare.com 'unsafe-inline' 'unsafe-eval';",
+    "intermediateLoadingScreenCSS": "",
+    "intermediateLoadingScreenHTML": "",
+    "debugMode": false,
+    "cssLinks": [
+      "https://assets.pingone.com/ux/end-user-nano/0.1.0-alpha.11/end-user-nano.css",
+      "https://assets.pingone.com/ux/astro-nano/0.1.0-alpha.11/icons.css"
+    ],
+    "useCustomCSS": true,
+    "logLevel": 2,
+    "scrubSensitiveInfo": true,
+    "sensitiveInfoFields": [
+      "password"
+    ],
+    "pingOneFlow": true,
+    "css": ".companyLogo {\n  content: url(\"https://assets.pingone.com/ux/ui-library/5.0.2/images/logo-pingidentity.png\");\n  width: 65px;\n  height: 65px;\n}",
+    "customTitle": "Sign On",
+    "customFaviconLink": "https://assets.pingone.com/ux/ui-library/5.0.2/images/logo-pingidentity.png"
+  },
+  "inputSchema": [],
+  "variables": [],
+  "graphData": {
+    "elements": {
+      "nodes": [
+        {
+          "data": {
+            "id": "signonform01",
+            "nodeType": "CONNECTION",
+            "connectionId": "REPLACE_HTTP_CONNECTION_ID",
+            "connectorId": "httpConnector",
+            "name": "HTTP",
+            "label": "Sign On Form",
+            "status": "unconfigured",
+            "capabilityName": "customHTMLTemplate",
+            "type": "trigger",
+            "properties": {
+              "title": {
+                "value": "Sign in"
+              },
+              "buttonLabel": {
+                "value": "Sign In"
+              },
+              "nodeTitle": {
+                "value": "Sign On Form"
+              },
+              "nodeDescription": {
+                "value": "Collect username and password (SIGNON action)"
+              },
+              "customHTML": {
+                "value": "<div class=\"bg-light d-flex flex-column justify-content-center align-items-center position-absolute top-0 start-0 bottom-0 end-0 overflow-auto\"><div style=\"max-width: 400px; min-width: 320px; width: 100%\"><div class=\"card shadow mb-5\"><div class=\"card-body p-5 d-flex flex-column\"><img class=\"companyLogo align-self-center mb-4\" alt=\"Ping Identity\" /><h1 class=\"text-center mb-4\">{{title}}</h1><p id=\"feedback\" data-skcomponent=\"skerror\" class=\"text-danger mdi mdi-alert-circle\"></p><p class=\"text-danger mdi mdi-alert-circle\" data-skerrorid=\"username\" data-skcomponent=\"skerrormessage\"></p><p class=\"text-danger mdi mdi-alert-circle\" data-skerrorid=\"password\" data-skcomponent=\"skerrormessage\"></p><form id=\"signonForm\"><div class=\"mb-4 form-floating\"><input class=\"form-control\" type=\"text\" id=\"username\" name=\"username\" placeholder=\"Username\" autocomplete=\"username\" /><label for=\"username\">Username</label></div><div class=\"mb-4 form-floating\"><input class=\"form-control\" type=\"password\" id=\"password\" name=\"password\" placeholder=\"Password\" autocomplete=\"current-password\" /><label for=\"password\">Password</label></div><button type=\"submit\" class=\"btn btn-primary w-100\" data-skcomponent=\"skbutton\" data-skbuttontype=\"form-submit\" data-skform=\"signonForm\" data-skrequiredinputs=\"username,password\" data-skbuttonvalue=\"SIGNON\">{{buttonLabel}}</button></form></div></div></div></div>"
+              },
+              "formFieldsList": {
+                "value": [
+                  {
+                    "propertyName": "username",
+                    "displayName": "Username",
+                    "preferredControlType": "textField",
+                    "preferredDataType": "string",
+                    "hashedVisibility": false,
+                    "value": ""
+                  },
+                  {
+                    "propertyName": "password",
+                    "displayName": "Password",
+                    "preferredControlType": "textField",
+                    "preferredDataType": "string",
+                    "hashedVisibility": true,
+                    "value": ""
+                  },
+                  {
+                    "propertyName": "buttonValue",
+                    "preferredControlType": "textField",
+                    "preferredDataType": "string",
+                    "value": ""
+                  }
+                ]
+              },
+              "returnRequestParameters": {
+                "value": true
+              }
+            }
+          },
+          "position": {
+            "x": 120,
+            "y": 280
+          },
+          "group": "nodes",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": false,
+          "classes": ""
+        },
+        {
+          "data": {
+            "id": "authuser001",
+            "nodeType": "CONNECTION",
+            "connectionId": "REPLACE_AUTHENTICATION_CONNECTION_ID",
+            "connectorId": "authenticationConnector",
+            "name": "Authentication",
+            "label": "Authenticate User",
+            "status": "unconfigured",
+            "capabilityName": "passwordAuthentication",
+            "type": "action",
+            "properties": {
+              "nodeTitle": {
+                "value": "Authenticate User"
+              },
+              "nodeDescription": {
+                "value": "Validate credentials against PingOne"
+              },
+              "username": {
+                "value": "{{local.signonform01.payload.output.username}}"
+              },
+              "password": {
+                "value": "{{local.signonform01.payload.output.password}}"
+              }
+            }
+          },
+          "position": {
+            "x": 420,
+            "y": 280
+          },
+          "group": "nodes",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": false,
+          "classes": ""
+        },
+        {
+          "data": {
+            "id": "success001",
+            "nodeType": "CONNECTION",
+            "connectionId": "REPLACE_PINGONE_AUTH_CONNECTION_ID",
+            "connectorId": "pingOneAuthenticationConnector",
+            "name": "PingOne Authentication",
+            "label": "Return Success",
+            "status": "unconfigured",
+            "capabilityName": "returnSuccessResponseRedirect",
+            "type": "action",
+            "properties": {
+              "nodeTitle": {
+                "value": "Return Success Response"
+              },
+              "nodeDescription": {
+                "value": "Complete OIDC authorization and create session"
+              }
+            }
+          },
+          "position": {
+            "x": 720,
+            "y": 200
+          },
+          "group": "nodes",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": false,
+          "classes": ""
+        },
+        {
+          "data": {
+            "id": "error0001",
+            "nodeType": "CONNECTION",
+            "connectionId": "REPLACE_PINGONE_AUTH_CONNECTION_ID",
+            "connectorId": "pingOneAuthenticationConnector",
+            "name": "PingOne Authentication",
+            "label": "Return Error",
+            "status": "unconfigured",
+            "capabilityName": "returnErrorResponseRedirect",
+            "type": "action",
+            "properties": {
+              "nodeTitle": {
+                "value": "Return Error Response"
+              },
+              "nodeDescription": {
+                "value": "Return authentication failure to client"
+              }
+            }
+          },
+          "position": {
+            "x": 720,
+            "y": 380
+          },
+          "group": "nodes",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": false,
+          "classes": ""
+        }
+      ],
+      "edges": [
+        {
+          "data": {
+            "id": "edge_form_to_auth",
+            "source": "signonform01",
+            "target": "authuser001"
+          },
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "group": "edges",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": true,
+          "classes": ""
+        },
+        {
+          "data": {
+            "id": "edge_auth_to_success",
+            "source": "authuser001",
+            "target": "success001",
+            "sourceHandle": "success"
+          },
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "group": "edges",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": true,
+          "classes": ""
+        },
+        {
+          "data": {
+            "id": "edge_auth_to_error",
+            "source": "authuser001",
+            "target": "error0001",
+            "sourceHandle": "error"
+          },
+          "position": {
+            "x": 0,
+            "y": 0
+          },
+          "group": "edges",
+          "removed": false,
+          "selected": false,
+          "selectable": true,
+          "locked": false,
+          "grabbable": true,
+          "pannable": true,
+          "classes": ""
+        }
+      ]
+    },
+    "data": {},
+    "zoomingEnabled": true,
+    "userZoomingEnabled": true,
+    "zoom": 1,
+    "minZoom": 1e-50,
+    "maxZoom": 1e+50,
+    "panningEnabled": true,
+    "userPanningEnabled": true,
+    "pan": {
+      "x": 0,
+      "y": 0
+    },
+    "boxSelectionEnabled": true,
+    "renderer": {
+      "name": "null"
+    }
+  },
+  "flowNameMapping": {
+    "a7f3e9c2b1d0486f9e2a5c7b8d4e1f03": "Simple Login Verification"
+  }
+}
