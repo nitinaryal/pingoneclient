@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>SAML 2.0 POC Application</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #0f2c59; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #0f2c59; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>SAML 2.0 Connection Successful!</h1>
+    <p>Logged in User Identifier: <strong th:text="${username}">user@company.com</strong></p>
+
+    <h2>SAML Assertions Received from PingOne</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Attribute Name</th>
+                <th>Attribute Value(s)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="entry : ${attributes}">
+                <td th:text="${entry.key}">Attribute Name</td>
+                <td>
+                    <ul>
+                        <li th:each="val : ${entry.value}" th:text="${val}">Value</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
